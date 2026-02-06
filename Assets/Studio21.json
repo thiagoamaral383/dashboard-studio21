@@ -1,0 +1,179 @@
+{
+    "name": "Studio21",
+    
+    "dataColors": [
+        "#d97783", 
+        "#d3a1a2", 
+        "#4b4c4a", 
+        "#dec7c5", 
+        "#b35f6a", 
+        "#a9a9a9", 
+        "#e8ddd8", 
+        "#c8c8c8"  
+    ],
+    
+    "firstLevelElements": "#4b4c4a",
+    "secondLevelElements": "#a9a9a9",
+    "thirdLevelElements": "#d3a1a2",
+    "fourthLevelElements": "#dec7c5",
+    "background": "#FFFFFF", 
+    "secondaryBackground": "#f5f2f2",
+    "tableAccent": "#d97783", 
+    
+    "good": "#5cb85c",
+    "neutral": "#e6c300",
+    "bad": "#d9534f",
+    
+    "textClasses": {
+        "callout": {
+            "fontSize": 40,
+            "fontFace": "Cinzel",
+            "color": "#4b4c4a"
+        },
+        "title": {
+            "fontSize": 20,
+            "fontFace": "Cinzel",
+            "color": "#4b4c4a"
+        },
+        "header": {
+            "fontSize": 14,
+            "fontFace": "Poppins",
+            "color": "#4b4c4a"
+        },
+        "label": {
+            "fontSize": 11,
+            "fontFace": "Cinzel",
+            "color": "#4b4c4a"
+        }
+    },
+	"visualStyles": {
+        "*": {
+            "*": {
+                "general": [{
+					"keepLayerOrder": true
+				}],
+                "legend": [{
+					"show": true,
+					"position": "Top",
+					"showTitle": false, 
+					"labelColor": { "solid": { "color": "#4b4c4a"}},
+					"fontFamily": "Cinzel",
+					"fontSize": 10
+				}],
+                "title": [{
+                    "show": true,
+                    "fontColor": { "solid": { "color": "#4b4c4a" } },
+                    "background": { "solid": { "color": "#FFFFFF", "transparency": 100 } }, 
+                    "alignment": "left",
+                    "fontSize": 16,
+                    "fontFamily": "Cinzel"
+                }],
+                "background": [{
+                    "show": true, 
+                    "color": { "solid": { "color": "#FFFFFF" } }, 
+                    "transparency": 0
+                }],
+                "border": [{
+                    "show": true,
+                    "color": { "solid": { "color": "#dec7c5" } }, 
+                    "radius": 0 
+                }],
+                "visualTooltip": [{
+                    "type": "Default"
+                }],
+                "stylePreset": [{ 
+                    "name": "Default" 
+                }],
+                "visualHeader": [{
+					"show": false
+				}],
+                "dropShadow": [{
+                    "show": false 
+				}],
+                "card": [{ 
+                    "labels": {
+                        "color": {"solid": {"color": "#d3a1a2"}}, 
+                        "fontFamily": "Poppins"
+                    },
+                    "dataLabels": {
+                        "color": {"solid": {"color": "#4b4c4a"}},
+                        "fontFamily": "Cinzel",
+                        "fontSize": 35 
+                    }
+                }],
+                "slicer": [{
+                    "background": [{ "show": false }],
+                    "filterHeader": {
+                        "fontFamily": "Poppins",
+                        "fontSize": 12,
+                        "color": {"solid": {"color": "#FFFFFF"}},
+                        "background": {"solid": {"color": "#d97783"}} 
+                    },
+                    "items": {
+                        "fontFamily": "Poppins",
+                        "fontSize": 10,
+                        "color": {"solid": {"color": "#4b4c4a"}},
+                        "background": {"solid": {"color": "#FFFFFF", "transparency": 100}}, 
+                        "selectedColor": {"solid": {"color": "#FFFFFF"}},
+                        "selectedBackground": {"solid": {"color": "#d3a1a2"}}
+                    }
+                }],
+                "table": [{
+                    "grid": {
+                        "gridColor": { "solid": { "color": "#dec7c5" } }
+                    },
+                    "header": {
+                        "fontFamily": "Poppins",
+                        "fontSize": 12,
+                        "color": { "solid": { "color": "#4b4c4a" } },
+                        "background": { "solid": { "color": "#f5f2f2" } }
+                    },
+                    "values": {
+                        "fontFamily": "Cinzel",
+                        "fontSize": 10,
+                        "color": { "solid": { "color": "#4b4c4a" } },
+                        "background": { "solid": { "color": "#FFFFFF" } }
+                    },
+                    "total": {
+                        "fontFamily": "Poppins",
+                        "fontSize": 12,
+                        "color": { "solid": { "color": "#4b4c4a" } },
+                        "background": { "solid": { "color": "#d3a1a2" } }
+                    }
+                }]
+            }
+        },
+        "page": {
+            "*": {
+                "background": [{
+                    "color": { "solid": { "color": "#f5f2f2" } }, 
+		            "image": { "url": "" },	
+                    "transparency": 0
+                }],
+                "outspace": [{
+                    "color": { "solid": { "color": "#dec7c5" } } 
+                }],
+                "outspacePane": [{
+                    "backgroundColor": { "solid": { "color": "#f5f2f2" } },
+                    "foregroundColor": { "solid": { "color": "#4b4c4a" } },
+                    "borderColor": { "solid": { "color": "#dec7c5" } },
+                    "fontFamily": "Poppins"
+                }],
+                "filterCard": [
+		            {
+                        "$id": "Applied",
+                        "backgroundColor": { "solid": { "color": "#d97783" } }, 
+                        "foregroundColor": { "solid": { "color": "#FFFFFF" } }, 
+                        "fontFamily": "Poppins"
+                    },
+                    {
+                        "$id": "Available",
+                        "backgroundColor": { "solid": { "color": "#FFFFFF" } },
+                        "foregroundColor": { "solid": { "color": "#4b4c4a" } },
+                        "fontFamily": "Poppins"
+                    }
+		        ]
+            }
+        }
+    }
+}

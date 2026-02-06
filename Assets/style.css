@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Poppins:wght@300;400;600&display=swap');
+
+body {
+    font-family: 'Poppins', sans-serif;
+    color: #4b4c4a; /* Cor extraída do JSON */
+    background-color: #f5f2f2; /* Cor de fundo suave extraída */
+    margin: 40px;
+}
+
+h1, h2, h3 {
+    font-family: 'Cinzel', serif; /* Fonte de títulos do JSON */
+    color: #4b4c4a;
+    border-bottom: 2px solid #d97783; /* Rosa Principal no sublinhado */
+    padding-bottom: 10px;
+    margin-top: 30px;
+}
+
+/* Tabela estilo Power BI */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background-color: #ffffff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+th {
+    background-color: #d97783; /* Rosa Principal no cabeçalho */
+    color: #ffffff;
+    font-family: 'Poppins', sans-serif;
+    padding: 12px;
+    text-transform: uppercase;
+    font-size: 12px;
+}
+
+td {
+    padding: 12px;
+    border-bottom: 1px solid #dec7c5; /* Cor da borda extraída */
+    text-align: center;
+}
+
+/* Destaques de Lucro/Prejuízo */
+.positivo { color: #5cb85c; font-weight: bold; }
+.negativo { color: #d9534f; font-weight: bold; }
+
+/* Rodapé e detalhes */
+blockquote {
+    border-left: 5px solid #d3a1a2; /* Rosa secundário */
+    background: #ffffff;
+    margin: 10px 0;
+    padding: 10px 20px;
+    font-style: italic;
+}
