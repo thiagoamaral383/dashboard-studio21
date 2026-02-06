@@ -1,0 +1,174 @@
+[
+    {
+        "id": "0002",
+        "nome_subpasta": "0002_Clientes",
+        "report_type": "padrao",
+        "filename_suffix": "",
+        "params": {
+            "relatorio": "0002",
+            "salao": "91604",
+            "como_conheceu": "ALL"
+        },
+        "headers": [
+            "Cliente",
+            "Celular",
+            "E-mail",
+            "Última Visita",
+            "Total Consumido",
+            "Profissionais",
+            "Número de Visitas"
+        ]
+    },
+    {
+        "id": "0007",
+        "nome_subpasta": "0007_Retorno",
+        "report_type": "comparacao",
+        "filename_suffix": "",
+        "params": {
+            "relatorio": "0007",
+            "salao": "91604"
+        },
+        "headers": [
+            "Cliente",
+            "E-mail",
+            "Telefone",
+            "Celular",
+            "Sexo",
+            "Última Visita"
+        ]
+    },
+    {
+        "id": "0126",
+        "nome_subpasta": "0126_Ocupacao",
+        "report_type": "padrao",
+        "filename_suffix": "",
+        "params": {
+            "relatorio": "0126",
+            "salao": "91604",
+            "minutos": "60"
+        },
+        "headers": [
+            "Profissional",
+            "Cargo",
+            "Carga Diária",
+            "Dias Úteis",
+            "Total Disponível",
+            "Total Agendado",
+            "Taxa de Ocupação (%)"
+        ]
+    },
+    {
+        "id": "0186",
+        "nome_subpasta": "0186_Comandas",
+        "report_type": "padrao",
+        "filename_suffix": "",
+        "params": {
+            "relatorio": "0186",
+            "salao": "91604"
+        },
+        "headers": [
+            "Data",
+            "Comanda",
+            "Item",
+            "Tipo",
+            "Categoria",
+            "Profissional",
+            "Assistente 1",
+            "Assistente 2",
+            "Comissão (%)",
+            "Cliente",
+            "Email",
+            "Telefone",
+            "Celular",
+            "Valor",
+            "Desconto",
+            "Qtd.",
+            "Custo",
+            "Comissão",
+            "Líquido",
+            "UA"
+        ]
+    },
+    {
+        "id": "0188",
+        "nome_subpasta": "0188_BandeirasCartao",
+        "report_type": "padrao",
+        "filename_suffix": "",
+        "params": {
+            "relatorio": "0188",
+            "salao": "91604"
+        },
+        "headers": [
+            "Bandeira",
+            "Valor faturado",
+            "Valor"
+        ]
+    },
+    {
+        "id": "0229",
+        "nome_subpasta": "0229_Profissionais",
+        "report_type": "sem_data",
+        "filename_suffix": "",
+        "params": {
+            "relatorio": "0229",
+            "salao": "91604"
+        },
+        "headers": [
+            "ID",
+            "Nome",
+            "Cargo",
+            "CPF",
+            "Apelido",
+            "Especialidade",
+            "Contratação",
+            "Grupo de acesso",
+            "Data Cadastro"
+        ]
+    },
+    {
+        "id": "0387",
+        "nome_subpasta": "0387_Financeiro/Competencia",
+        "report_type": "padrao",
+        "filename_suffix": "_Competencia",
+        "params": {
+            "relatorio": "0387",
+            "salao": "91604",
+            "tipo": "competencia"
+        },
+        "headers": [
+            "Competência",
+            "Pagamento",
+            "Cobrança",
+            "Título",
+            "Conta Bancária",
+            "Categoria",
+            "Fornecedor/Cliente",
+            "Centro de Custos",
+            "Valor",
+            "Observações"
+        ]
+    },
+    {
+        "id": "0387",
+        "nome_subpasta": "0387_Financeiro/Caixa",
+        "report_type": "padrao",
+        "filename_suffix": "_Caixa",
+        "params": {
+            "relatorio": "0387",
+            "salao": "91604",
+            "tipo": "pagamento"
+        },
+        "headers": [
+            "Competência",
+            "Pagamento",
+            "Cobrança",
+            "Título",
+            "Conta Bancária",
+            "Categoria",
+            "Fornecedor/Cliente",
+            "Centro de Custos",
+            "Valor",
+            "Observações"
+        ]
+    }
+]
