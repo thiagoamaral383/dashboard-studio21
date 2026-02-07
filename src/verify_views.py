@@ -26,10 +26,11 @@ print("=" * 80)
 print("TESTE 1: Verificar Criação das Views")
 print("=" * 80)
 
+
 query1 = """
 SELECT table_name 
 FROM information_schema.tables 
-WHERE table_name IN ('vw_fato_vendas', 'vw_competencia')
+WHERE table_name IN ('fct_vendas', 'rep_financeiro_competencia')
 ORDER BY table_name;
 """
 
@@ -39,11 +40,11 @@ for row in result1:
     print(f"  ✓ {row[0]}")
 
 print("\n" + "=" * 80)
-print("TESTE 2: Estrutura vw_fato_vendas (5 primeiras linhas)")
+print("TESTE 2: Estrutura fct_vendas (5 primeiras linhas)")
 print("=" * 80)
 
 query2 = """
-SELECT * FROM vw_fato_vendas LIMIT 5;
+SELECT * FROM fct_vendas LIMIT 5;
 """
 
 result2 = conn.execute(query2).fetchdf()
@@ -58,7 +59,7 @@ SELECT
     id_cliente,
     COUNT(*) as total_vendas,
     SUM(CASE WHEN is_recorrente THEN 1 ELSE 0 END) as vendas_recorrentes
-FROM vw_fato_vendas
+FROM fct_vendas
 GROUP BY id_cliente
 ORDER BY total_vendas DESC
 LIMIT 10;
@@ -68,11 +69,11 @@ result3 = conn.execute(query3).fetchdf()
 print(result3.to_string())
 
 print("\n" + "=" * 80)
-print("TESTE 4: Estrutura vw_competencia (10 primeiras linhas)")
+print("TESTE 4: Estrutura rep_financeiro_competencia (10 primeiras linhas)")
 print("=" * 80)
 
 query4 = """
-SELECT * FROM vw_competencia LIMIT 10;
+SELECT * FROM rep_financeiro_competencia LIMIT 10;
 """
 
 result4 = conn.execute(query4).fetchdf()
@@ -89,7 +90,7 @@ SELECT
     ROUND(MIN(valor), 2) as valor_min,
     ROUND(MAX(valor), 2) as valor_max,
     ROUND(SUM(valor), 2) as total
-FROM vw_competencia
+FROM rep_financeiro_competencia
 GROUP BY grupo_metrica
 ORDER BY grupo_metrica;
 """
@@ -105,7 +106,7 @@ query6 = """
 SELECT 
     grupo_metrica,
     COUNT(*) as total_registros
-FROM vw_competencia
+FROM rep_financeiro_competencia
 GROUP BY grupo_metrica
 ORDER BY grupo_metrica;
 """

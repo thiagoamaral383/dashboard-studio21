@@ -4,7 +4,7 @@ Main application entry point.
 """
 
 import streamlit as st
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from pathlib import Path
 
 # Import utilities and components
@@ -24,21 +24,17 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-
-
-
-
 # ============================================================================
 # SESSION STATE INITIALIZATION
 # ============================================================================
 def initialize_session_state():
     """Initialize session state variables."""
-    if "start_date" not in st.session_state:
+    if "date_start_picker" not in st.session_state:
         # Default: Last 30 days
-        st.session_state.start_date = datetime.now().date() - timedelta(days=30)
+        st.session_state.date_start_picker = date.today() - timedelta(days=30)
     
-    if "end_date" not in st.session_state:
-        st.session_state.end_date = datetime.now().date()
+    if "date_end_picker" not in st.session_state:
+        st.session_state.date_end_picker = date.today()
 
 
 initialize_session_state()
@@ -67,43 +63,76 @@ with st.sidebar:
     with col1:
         start_date = st.date_input(
             "Data Inicial",
-            value=st.session_state.start_date,
-            key="date_start_picker"
+            key="date_start_picker",
+            format="DD/MM/YYYY"
         )
     
     with col2:
         end_date = st.date_input(
             "Data Final",
-            value=st.session_state.end_date,
-            key="date_end_picker"
+            key="date_end_picker",
+            format="DD/MM/YYYY"
         )
     
     # Update session state
     st.session_state.start_date = start_date
     st.session_state.end_date = end_date
     
-    # Quick shortcuts
-    st.caption("Atalhos Rápidos:")
+    # Callback to update date range
+    def update_date_range(days=None, start=None):
+        """Update date range pickers in session state."""
+        if start:
+            st.session_state.date_start_picker = start
+        elif days:
+            st.session_state.date_start_picker = date.today() - timedelta(days=days)
+            
+        st.session_state.date_end_picker = date.today()
     
-    col_btn1, col_btn2, col_btn3 = st.columns(3)
+    # First row: 30 dias and 3 meses
+    col_btn1, col_btn2 = st.columns(2)
     
     with col_btn1:
-        if st.button("30 dias", use_container_width=True):
-            st.session_state.start_date = datetime.now().date() - timedelta(days=30)
-            st.session_state.end_date = datetime.now().date()
-            st.rerun()
+        st.button(
+            "30 dias", 
+            use_container_width=True,
+            on_click=update_date_range,
+            kwargs={"days": 30}
+        )
     
     with col_btn2:
-        if st.button("3 meses", use_container_width=True):
-            st.session_state.start_date = datetime.now().date() - timedelta(days=90)
-            st.session_state.end_date = datetime.now().date()
-            st.rerun()
+        st.button(
+            "3 meses", 
+            use_container_width=True,
+            on_click=update_date_range,
+            kwargs={"days": 90}
+        )
+    
+    # Second row: 6 meses and 1 ano
+    col_btn3, col_btn4 = st.columns(2)
     
     with col_btn3:
-        if st.button("1 ano", use_container_width=True):
-            st.session_state.start_date = datetime.now().date() - timedelta(days=365)
-            st.session_state.end_date = datetime.now().date()
-            st.rerun()
+        st.button(
+            "6 meses", 
+            use_container_width=True,
+            on_click=update_date_range,
+            kwargs={"days": 180}
+        )
+    
+    with col_btn4:
+        st.button(
+            "1 ano", 
+            use_container_width=True,
+            on_click=update_date_range,
+            kwargs={"days": 365}
+        )
+    
+    # Third row: Desde o início (full width for emphasis)
+    st.button(
+        "Desde o início", 
+        use_container_width=True,
+        on_click=update_date_range,
+        kwargs={"start": date(2023, 8, 1)}
+    )
     
     # Filter summary
     st.markdown("---")
@@ -155,4 +184,4 @@ with tab3:
 # FOOTER
 # ============================================================================
 st.markdown("---")
-st.caption("Studio21 Business Intelligence | Developed by Thiago Amaral")
+st.caption("Dashboard Studio21 | Developed by Thiago Amaral")

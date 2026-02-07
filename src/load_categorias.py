@@ -22,23 +22,23 @@ def load_categorias_to_motherduck():
 
     # Read the CSV file
     csv_path = script_dir / "seeds" / "categorias.csv"
-    print(f"📂 Lendo arquivo: {csv_path}")
+    print(f"Lendo arquivo: {csv_path}")
     df = pd.read_csv(csv_path)
     
-    print(f"✓ {len(df)} categorias carregadas do CSV")
-    print(f"  Colunas: {df.columns.tolist()}")
+    print(f"{len(df)} categorias carregadas do CSV")
+    print(f"Colunas: {df.columns.tolist()}")
     
     # Connect to Motherduck
     con = duckdb.connect(f'md:?motherduck_token={token}')
     
     try:
         # Drop the old view if it exists
-        print("\n🗑️  Removendo view antiga (se existir)...")
+        print("Removendo view antiga (se existir)...")
         con.execute("DROP VIEW IF EXISTS vw_dim_categorias")
-        print("✓ View removida")
+        print("View removida")
         
         # Create physical table from DataFrame
-        print("\n📊 Criando tabela física tbl_dim_categorias...")
+        print("Criando tabela física tbl_dim_categorias...")
         con.execute("""
             CREATE OR REPLACE TABLE tbl_dim_categorias AS 
             SELECT 

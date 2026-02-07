@@ -49,7 +49,7 @@ def render():
         SELECT 
             grupo_metrica,
             SUM(valor) as valor
-        FROM vw_competencia
+        FROM rep_financeiro_competencia
         WHERE data BETWEEN '{start_date}' AND '{end_date}'
         GROUP BY grupo_metrica
     """
@@ -59,7 +59,7 @@ def render():
         SELECT 
             grupo_metrica,
             SUM(valor) as valor
-        FROM vw_competencia
+        FROM rep_financeiro_competencia
         WHERE data BETWEEN '{prev_start}' AND '{prev_end}'
         GROUP BY grupo_metrica
     """
