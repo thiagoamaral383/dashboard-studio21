@@ -135,7 +135,7 @@ def render():
     st.markdown("---")
     
     # Debug info (optional - can be removed in production)
-    with st.expander("🔍 Informações de Período"):
+    with st.expander("Informações de Período"):
         col1, col2 = st.columns(2)
         with col1:
             st.caption("**Período Atual:**")
@@ -147,5 +147,5 @@ def render():
             st.caption(f"{(prev_end - prev_start).days + 1} dias")
     
     # Placeholder for future charts
-    st.info("📊 Gráficos e análises detalhadas serão implementados na próxima fase")
+    st.info("Gráficos e análises detalhadas serão implementados na próxima fase")
 
