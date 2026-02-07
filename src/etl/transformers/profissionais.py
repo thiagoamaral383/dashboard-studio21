@@ -7,8 +7,8 @@ from src.etl.cleaning import clean_column_name
 logger = logging.getLogger(__name__)
 
 def clean_text_field(series: pd.Series) -> pd.Series:
-    """Normalizes text fields: Title Case, Strip, handle nulls."""
-    return series.fillna('Não Informado').astype(str).str.strip().str.title()
+    """Normalizes text fields: UPPER CASE, Strip, handle nulls."""
+    return series.fillna('NÃO INFORMADO').astype(str).str.strip().str.upper()
 
 def clean_cpf(series: pd.Series) -> pd.Series:
     """
@@ -24,13 +24,13 @@ def clean_cpf(series: pd.Series) -> pd.Series:
     s = s.str.replace(r'[.-]', '', regex=True)
     
     # Replace empty or 'nan' string with default
-    s = s.replace(['', 'nan', 'None'], 'Não Informado')
+    s = s.replace(['', 'nan', 'None'], 'NÃO INFORMADO')
     
     return s
 
 def generate_id(nome: str) -> str:
     """Generates MD5 hash from the normalized name."""
-    if not nome or nome == 'Não Informado':
+    if not nome or nome == 'NÃO INFORMADO':
         return 'UNKNOWN'
     return hashlib.md5(nome.encode('utf-8')).hexdigest()
 
@@ -99,11 +99,11 @@ def process_profissionais(df_list: List[pd.DataFrame]) -> pd.DataFrame:
     # 6. Add UNKNOWN Row (Simulated)
     unknown_row = {
         'id_profissional': 'UNKNOWN',
-        'nome': 'Não Identificado',
+        'nome': 'NÃO IDENTIFICADO',
         'apelido': 'N/I',
-        'cargo': 'Não Informado',
-        'cpf': 'Não Informado',
-        'especialidade': 'Não Informado',
+        'cargo': 'NÃO INFORMADO',
+        'cpf': 'NÃO INFORMADO',
+        'especialidade': 'NÃO INFORMADO',
         'data_cadastro': pd.NaT
     }
     df_unknown = pd.DataFrame([unknown_row])
