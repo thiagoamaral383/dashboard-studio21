@@ -1,0 +1,3 @@
+[server]
+# Enable file watcher for development
+fileWatcherType = "auto"
