@@ -1,6 +1,8 @@
 @echo off
 echo --- Studio21 Data Extractor ---
 echo.
+echo.
+call .venv\Scripts\activate.bat
 python src/main.py
 echo.
 if %errorlevel% neq 0 (
