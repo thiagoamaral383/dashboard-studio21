@@ -2,7 +2,7 @@ import pandas as pd
 import hashlib
 import logging
 from typing import List, Dict, Optional, Any, Tuple
-from src.etl.cleaning import clean_currency, clean_date
+from src.etl.cleaning import clean_currency, clean_date, clean_column_name
 
 logger = logging.getLogger(__name__)
 
@@ -43,40 +43,75 @@ def process_financeiro(data: Tuple[List[pd.DataFrame], List[pd.DataFrame]]) -> p
         if df.empty:
             return df
 
-        # Standardize Names immediately to avoid mismatch during concat
-        # Using a mapping strategy. Keys = Source (potential), Value = Target
-        
-        rename_map = {
-            # Dates
-            'Pagamento': 'data_movimento',
-            'Competência': 'data_movimento',
-            'Data': 'data_movimento',
+        # 1. Limpeza Inicial
+        df.columns = [clean_column_name(c) for c in df.columns]
+
+        # 2. Remocao de Lixo Global
+        if 'cobranca' in df.columns:
+            df.drop(columns=['cobranca'], inplace=True)
+
+        # 3. Logica Especifica por Tipo
+        if stream_type == 'Caixa':
+            # DROP OBRIGATORIO: Se existir a coluna competencia, remova-a
+            if 'competencia' in df.columns:
+                df.drop(columns=['competencia'], inplace=True)
             
+            # RENAME: Renomeie pagamento -> data_movimento
+            if 'pagamento' in df.columns:
+                df.rename(columns={'pagamento': 'data_movimento'}, inplace=True)
+
+        elif stream_type == 'Competencia':
+            # DROP OBRIGATORIO: Se existir a coluna pagamento, remova-a
+            if 'pagamento' in df.columns:
+                df.drop(columns=['pagamento'], inplace=True)
+
+            # RENAME: Renomeie competencia -> data_movimento
+            if 'competencia' in df.columns:
+                df.rename(columns={'competencia': 'data_movimento'}, inplace=True)
+
+        # 4. Mapeamento Restante
+        # Renomeie as colunas comuns (valor, titulo, categoria, etc.) normalmente.
+        common_rename_map = {
             # Values
-            'Valor': 'valor',
-            'Valor Pago': 'valor',
-            'Valor Previsto': 'valor',
+            'valor': 'valor',
+            'valor_pago': 'valor',
+            'valor_previsto': 'valor',
             
             # Dimensions
-            'Título': 'titulo',
-            'Titulo': 'titulo',
-            'Categoria': 'categoria',
-            'Conta Bancária': 'conta_bancaria',
-            'Conta Bancaria': 'conta_bancaria',
-            'Fornecedor/Cliente': 'fornecedor_cliente',
-            'Centro de Custos': 'centro_de_custos',
-            'Observações': 'observacoes',
-            'Observacoes': 'observacoes'
+            'titulo': 'titulo',
+            'categoria': 'categoria',
+            'conta_bancaria': 'conta_bancaria',
+            'fornecedor_cliente': 'fornecedor_cliente',
+            'centro_de_custos': 'centro_de_custos',
+            'observacoes': 'observacoes'
         }
         
-        df.rename(columns=rename_map, inplace=True)
-        
+        df.rename(columns=common_rename_map, inplace=True)
+
+        # 5. Tratamento de Erro e Validacao
+        # Se data_movimento nao existir (ex: planilha vazia ou com nome errado), 
+        # gere um log de aviso e pule ou preencha com NaT.
+        if 'data_movimento' not in df.columns:
+            logger.warning(f"Stream {stream_type}: 'data_movimento' nao identificada. Colunas encontradas: {df.columns.tolist()}")
+            df['data_movimento'] = pd.NaT
+
         # Enforce 'tipo' column
         df['tipo'] = stream_type
         
-        # Ensure 'observacoes' exists if missing (common in some sources)
+        # Ensure 'observacoes' exists if missing
         if 'observacoes' not in df.columns:
             df['observacoes'] = "Não Informado"
+
+        # 6. Select only needed columns temporarily to avoid garbage (Safety)
+        target_cols = [
+            'data_movimento', 'valor', 'titulo', 'categoria', 
+            'conta_bancaria', 'fornecedor_cliente', 'centro_de_custos', 
+            'observacoes', 'tipo'
+        ]
+        
+        # Intersection of what we have and what we want
+        cols_to_keep = [c for c in df.columns if c in target_cols]
+        df = df[cols_to_keep]
 
         return df
 

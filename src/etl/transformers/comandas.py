@@ -27,6 +27,14 @@ def process_comandas(df_list: List[pd.DataFrame]) -> pd.DataFrame:
     if df.empty:
         return df
 
+    # FIX: Pre-cleaning Rename to avoid collision between 'Comissão (%)' and 'Comissão'.
+    # Both would become 'comissao' via clean_column_name, causing duplicate columns.
+    rename_map = {
+        'Comissão (%)': 'comissao_pct',
+        'Comissao (%)': 'comissao_pct'
+    }
+    df = df.rename(columns=rename_map)
+
     # 2. Sanitize Column Names
     # Expecting: 'Data', 'Comanda', 'Profissional', 'Cliente', 'Item', 'Tipo', 'Categoria', 
     # 'Valor', 'Desconto', 'Qtd', 'Custo', 'Comissão', 'Líquido'

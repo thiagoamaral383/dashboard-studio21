@@ -1,7 +1,7 @@
 import pandas as pd
 import logging
 from typing import Any
-from .transformers import financeiro, clientes, operacional, comandas, bandeiras
+from .transformers import financeiro, clientes, operacional, comandas, bandeiras, retorno, profissionais
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +39,14 @@ def transform_factory(report_id: str, data: Any) -> pd.DataFrame:
     elif report_id == '0188':
         # Financeiro: Bandeiras (Taxas Maquininha)
         return bandeiras.process_bandeiras(data)
+
+    elif report_id == '0007':
+        # Retorno (Retenção de Clientes)
+        return retorno.process_retorno(data)
+
+    elif report_id == '0229':
+        # Profissionais
+        return profissionais.process_profissionais(data)
         
     else:
         # Strict Mode: Fail if report ID is unknown
