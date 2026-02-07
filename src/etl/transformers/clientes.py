@@ -2,7 +2,7 @@ import pandas as pd
 import hashlib
 import logging
 from typing import List, Dict, Optional, Any
-from .generico import clean_column_name
+
 
 logger = logging.getLogger(__name__)
 

@@ -142,6 +142,8 @@ def process_month(month: datetime, session: requests.Session, config_list: List[
             try:
                 # Keep using openpyxl for reading (default)
                 df = pd.read_excel(file_path, dtype=str)
+                # Runtime Injection from Function Argument (not file)
+                df['data_competencia'] = month
             except Exception as e:
                 logger.error(f"  Erro ao ler cache {filename}: {e}. Tentando baixar novamente.")
         
@@ -168,7 +170,10 @@ def process_month(month: datetime, session: requests.Session, config_list: List[
             
             if raw_data:
                 headers = report_config.get("headers", [])
+                headers = report_config.get("headers", [])
                 df = pd.DataFrame(raw_data, columns=headers)
+                # Runtime Injection
+                df['data_competencia'] = month
                 
                 # Save Local
                 try:

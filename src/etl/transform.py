@@ -1,7 +1,7 @@
 import pandas as pd
 import logging
-from typing import Any, List, Union, Tuple
-from .transformers import financeiro, clientes, generico
+from typing import Any
+from .transformers import financeiro, clientes, operacional, comandas, bandeiras
 
 logger = logging.getLogger(__name__)
 
@@ -22,19 +22,24 @@ def transform_factory(report_id: str, data: Any) -> pd.DataFrame:
     
     if report_id == '0387':
         # Financeiro (Caixa + Competência)
-        # Expects data to be tuple of lists
         return financeiro.process_financeiro(data)
         
     elif report_id == '0002':
         # Dimensão Clientes
-        # Expects data to be List[pd.DataFrame] (from generic extract)
         return clientes.process_dim_clientes(data)
         
-    else:
-        # Generic Fallback
-        # Expects data to be List[pd.DataFrame]
-        return generico.process_generic_data(data, report_id=report_id)
+    elif report_id == '0126':
+        # Operacional: Ocupação
+        return operacional.process_ocupacao(data)
+
+    elif report_id == '0186':
+        # Fato Comandas
+        return comandas.process_comandas(data)
+
+    elif report_id == '0188':
+        # Financeiro: Bandeiras (Taxas Maquininha)
+        return bandeiras.process_bandeiras(data)
         
-# Expose generic helpers if legacy code still imports them from here directly (unlikely but safe)
-# Though ideally consumers should import from .transformers.generico or go through factory.
-from .transformers.generico import clean_currency, clean_date
+    else:
+        # Strict Mode: Fail if report ID is unknown
+        raise ValueError(f"No transformer implementation found for report_id: {report_id}")
