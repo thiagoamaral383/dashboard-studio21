@@ -1,45 +1,25 @@
 """
 Database utility module for Studio21 Dashboard.
-Provides cached MotherDuck connection and query execution using DuckDB.
+Provides cached MotherDuck connection and query execution.
 """
 
 import streamlit as st
 import pandas as pd
-import duckdb
 from typing import Optional
 
 
 @st.cache_resource
 def get_motherduck_connection():
     """
-    Get a singleton MotherDuck connection using DuckDB.
+    Get a singleton MotherDuck connection.
     Connection is cached across reruns for performance.
     
     Returns:
-        DuckDB connection object configured for MotherDuck
+        MotherDuck connection object
     """
     try:
-        # Get MotherDuck token from secrets
-        if "connections" in st.secrets and "motherduck" in st.secrets.connections:
-            # Extract token from URL format: "md:?motherduck_token=XXX"
-            url = st.secrets.connections.motherduck.get("url", "")
-            if "motherduck_token=" in url:
-                token = url.split("motherduck_token=")[1]
-            else:
-                # Fallback: try direct token field
-                token = st.secrets.connections.motherduck.get("token", "")
-        else:
-            st.error("MotherDuck token não encontrado em secrets.toml")
-            st.stop()
-        
-        if not token:
-            st.error("MotherDuck token está vazio")
-            st.stop()
-        
-        # Connect to MotherDuck
-        conn = duckdb.connect(f"md:?motherduck_token={token}")
+        conn = st.connection("motherduck", type="sql")
         return conn
-        
     except Exception as e:
         st.error(f"Erro ao conectar com MotherDuck: {e}")
         st.stop()
@@ -62,7 +42,7 @@ def query_data(sql: str) -> pd.DataFrame:
     """
     try:
         conn = get_motherduck_connection()
-        df = conn.execute(sql).fetchdf()
+        df = conn.query(sql)
         return df
     except Exception as e:
         st.error(f"Erro ao executar query: {e}")

@@ -5,6 +5,8 @@ openpyxl
 python-dateutil
 motherduck
 duckdb
+duckdb-engine
 streamlit>=1.40.0
+sqlalchemy
 xlsxwriter
 altair<5
