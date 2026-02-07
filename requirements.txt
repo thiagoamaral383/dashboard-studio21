@@ -7,4 +7,4 @@ motherduck
 duckdb
 streamlit
 xlsxwriter
-altair
+altair<5
