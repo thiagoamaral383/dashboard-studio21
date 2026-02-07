@@ -170,7 +170,7 @@ def process_comandas(df_list: List[pd.DataFrame]) -> pd.DataFrame:
 
     # 7. Final Select
     desired_cols = [
-        'data', 'id_comanda_unica', 'id_profissional', 'id_cliente', 'id_servico', 
+        'data', 'id_comanda_unica', 'id_profissional', 'profissional', 'id_cliente', 'id_servico', 
         'valor', 'desconto', 'qtd', 'custo', 'comissao', 'liquido'
     ]
     

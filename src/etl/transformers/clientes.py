@@ -28,70 +28,110 @@ def process_dim_clientes(df_list: List[pd.DataFrame]) -> pd.DataFrame:
     if df.empty:
         return df
 
-    # 1. Select Columns
-    # Normalize input columns to allow for some variation? No, strict per spec.
-    # But let's handle potential casing issues in source if needed.
-    # For now, stick to spec: 'Cliente', 'Celular', 'E-mail'
-    
-    desired_cols = ['Cliente', 'Celular', 'E-mail']
-    available_cols = [c for c in desired_cols if c in df.columns]
-    
-    if 'Cliente' not in available_cols:
+    # 2. Select Columns (Handle Optional Columns Gracefully)
+    # Essential columns that MUST exist (or we fail/warn)
+    if 'Cliente' not in df.columns:
         logger.warning(f"Dimensão Clientes (0002) sem coluna obrigatória 'Cliente'. Cols: {df.columns.tolist()}")
-        return pd.DataFrame() # Limit redundancy
-        
-    df = df[available_cols].copy()
+        return pd.DataFrame()
 
-    # 2. Data Cleaning
-    
-    # Cliente: Trim, Title, Handle Empty/Null
-    df['Cliente'] = df['Cliente'].astype(str).str.strip()
-    # Replace empty strings and 'nan'/'None' strings
-    df['Cliente'] = df['Cliente'].replace(['', 'nan', 'None'], 'Não Indentificado')
-    
-    # Title casing:
-    # Title() in pandas/python can be aggressive (e.g. D'agua -> D'Agua).
-    # Power Query Text.Proper matches .str.title() roughly.
-    df['Cliente'] = df['Cliente'].apply(lambda x: x.title() if x != 'Não Indentificado' else x)
-    
-    # 3. Deduplication
-    df.drop_duplicates(subset=['Cliente'], inplace=True)
-    
-    # 4. Handle Nulls (Celular, E-mail)
-    for col in ['Celular', 'E-mail']:
-        if col in df.columns:
-            df[col] = df[col].astype(str).str.strip().replace(['', 'nan', 'None'], 'Não Informado')
-        else:
-            df[col] = 'Não Informado'
-
-    # 5. Generate ID (MD5 of Cliente)
-    df['id_cliente'] = df['Cliente'].apply(lambda x: hashlib.md5(x.encode('utf-8')).hexdigest())
-    
-    # 7. Sanitize Column Names
-    # Explicit mapping for known columns to ensure 'email' not 'e_mail'
-    rename_map = {
+    # Definition of columns to keep and their target names
+    # Using a mapping for easy renaming later
+    # 'Source': 'Target'
+    col_mapping = {
         'Cliente': 'cliente',
         'Celular': 'celular',
-        'E-mail': 'email'
+        'E-mail': 'email',
+        'Data de Nascimento': 'data_nascimento',
+        'Sexo': 'sexo'
     }
-    df.rename(columns=rename_map, inplace=True)
+
+    # Ensure optional columns exist in df to avoid KeyErrors
+    for source_col in col_mapping.keys():
+        if source_col not in df.columns:
+            df[source_col] = None  # Create missing column with None/NaN
+
+    # Filter to only desired columns
+    df = df[list(col_mapping.keys())].copy()
+
+    # 3. Data Cleaning
+
+    # --- CLIENTE (Crucial: UPPER, Strip, Remove Dots) ---
+    df['Cliente'] = df['Cliente'].astype(str).str.strip().str.upper()
+    # Remove trailing dots (e.g., "MARIA S." -> "MARIA S")
+    df['Cliente'] = df['Cliente'].str.rstrip('.')
+    # Replace empty/nan strings
+    df['Cliente'] = df['Cliente'].replace(['', 'NAN', 'NONE'], 'NAO IDENTIFICADO')
+
+    # --- EMAIL (Lower case) ---
+    if 'E-mail' in df.columns:
+        df['E-mail'] = df['E-mail'].astype(str).str.strip().str.lower()
+        df['E-mail'] = df['E-mail'].replace(['', 'nan', 'none'], None)
+
+    # --- CELULAR (Sanitization: Digits ONLY) ---
+    if 'Celular' in df.columns:
+        # Remove non-digits
+        df['Celular'] = df['Celular'].astype(str).str.replace(r'\D', '', regex=True)
+        # Handle invalid lengths (valid BR mobile is usually 11 digits, sometimes 10 or 8/9 legacy)
+        # User Rule: "If < 8 digits, treat as None"
+        df['Celular'] = df['Celular'].apply(lambda x: x if len(str(x)) >= 8 else None)
+
+    # 4. Intelligent Deduplication (The "Richness" Logic)
+    # We need to pick the "best" record for each unique Name.
+    # Score: Celular (+10), Email (+5), Data de Nascimento (+1)
     
-    # 6. Add Unknown Row
-    unknown_row = {
+    def calculate_richness(row):
+        score = 0
+        if pd.notna(row.get('Celular')) and row.get('Celular') != '':
+            score += 10
+        if pd.notna(row.get('E-mail')) and row.get('E-mail') != '':
+            score += 5
+        if pd.notna(row.get('Data de Nascimento')) and row.get('Data de Nascimento') != '':
+            score += 1
+        return score
+
+    df['richness_score'] = df.apply(calculate_richness, axis=1)
+
+    # Preserve original index to use as tie-breaker (Latest = Better)
+    df['original_order'] = df.index
+
+    # Sort by Score (DESC) and then by Original Order (DESC) to keep the "newest" among the "best"
+    # This ensures that if scores are tied, we take the one that appeared last (most recent entry)
+    df = df.sort_values(by=['richness_score', 'original_order'], ascending=[False, False])
+    
+    df.drop_duplicates(subset=['Cliente'], keep='first', inplace=True)
+
+    # 5. Generate ID (MD5 of Cliente)
+    # Now that Cliente is standardized (UPPER), the ID will be consistent for "Maria" and "MARIA".
+    df['id_cliente'] = df['Cliente'].apply(lambda x: hashlib.md5(x.encode('utf-8')).hexdigest())
+
+    # 6. Apply Renaming
+    df.rename(columns=col_mapping, inplace=True)
+
+    # 7. Add Unknown Row
+    unknown_cols = {
         'id_cliente': 'UNKNOWN',
-        'cliente': 'Não Identificado',
-        'celular': 'Não Informado',
-        'email': 'Não Informado'
+        'cliente': 'NAO IDENTIFICADO',
+        'celular': 'NAO INFORMADO',
+        'email': 'NAO INFORMADO',
+        'sexo': 'NAO INFORMADO',
+        'data_nascimento': None
     }
+    # Ensure all columns in final df are in unknown_row (or handle mismatch)
     
-    df_unknown = pd.DataFrame([unknown_row])
+    df_unknown = pd.DataFrame([unknown_cols])
+    
+    # Concatenate
     df_final = pd.concat([df, df_unknown], ignore_index=True)
-    
-    # Reorder
-    cols_order = ['id_cliente', 'cliente', 'celular', 'email']
-    final_cols = [c for c in cols_order if c in df_final.columns]
-    df_final = df_final[final_cols]
-    
+
+    # 8. Final Column Selection & Ordering
+    final_pd_cols = ['id_cliente', 'cliente', 'email', 'celular', 'data_nascimento', 'sexo']
+    # Ensure all exist (handling cases where optional cols were missing entirely)
+    for c in final_pd_cols:
+        if c not in df_final.columns:
+            df_final[c] = None
+
+    df_final = df_final[final_pd_cols]
+
     logger.info(f"Dimensão Clientes processada. Rows: {len(df_final)}")
-    
+
     return df_final
