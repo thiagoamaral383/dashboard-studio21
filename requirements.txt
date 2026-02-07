@@ -6,6 +6,5 @@ python-dateutil
 motherduck
 duckdb
 streamlit>=1.40.0
-sqlalchemy
 xlsxwriter
 altair<5
