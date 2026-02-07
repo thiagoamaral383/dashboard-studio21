@@ -23,7 +23,15 @@ def create_views():
             sql_script = f.read()
             
         con.execute(sql_script)
-        print("View vw_dim_profissionais criada com sucesso")
+        print("✓ Todas as views criadas com sucesso:")
+        print("  - vw_dim_profissionais")
+        print("  - vw_dim_clientes")
+        print("  - vw_dim_servicos")
+        print("  - vw_dim_calendario")
+        print("  - vw_dim_categorias")
+        print("  - vw_fato_financeiro")
+        print("  - vw_fato_taxas_cartao")
+        print("  - vw_fato_ocupacao")
         
     except Exception as e:
         print(f"Erro ao criar view: {e}")

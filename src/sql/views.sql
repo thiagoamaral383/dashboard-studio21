@@ -99,3 +99,55 @@ SELECT
     CAST(strftime (data_series, '%Y%m') AS INTEGER) AS ano_mes
 FROM
     dates;
+
+-- ============================================================================
+-- DIMENSÃO: Categorias Financeiras
+-- ============================================================================
+-- NOTE: tbl_dim_categorias is a physical table loaded via load_categorias.py
+-- This replaces the previous CSV-based view to work in Motherduck cloud.
+-- ============================================================================
+-- FATO: Financeiro (com hierarquia de categorias)
+-- ============================================================================
+CREATE
+OR REPLACE VIEW vw_fato_financeiro AS
+SELECT
+    f.*,
+    c.nivel_1,
+    c.nivel_2,
+    c.excluir_dre
+FROM
+    tbl_0387_financeiro f
+    LEFT JOIN tbl_dim_categorias c ON UPPER(TRIM(f.categoria)) = UPPER(TRIM(c.categoria));
+
+-- ============================================================================
+-- FATO: Taxas de Cartão
+-- ============================================================================
+CREATE
+OR REPLACE VIEW vw_fato_taxas_cartao AS
+SELECT
+    data_competencia,
+    bandeira,
+    valor_faturado,
+    valor_liquido,
+    (valor_faturado - valor_liquido) AS valor_taxa
+FROM
+    tbl_0188_bandeirascartao
+WHERE
+    valor_faturado IS NOT NULL
+    AND valor_liquido IS NOT NULL;
+
+-- ============================================================================
+-- FATO: Ocupação (com ID de profissional via MD5)
+-- ============================================================================
+CREATE
+OR REPLACE VIEW vw_fato_ocupacao AS
+SELECT
+    md5 (UPPER(TRIM(profissional))) AS id_profissional,
+    profissional,
+    data_competencia,
+    horas_agendadas_decimal
+FROM
+    tbl_0126_ocupacao
+WHERE
+    profissional IS NOT NULL
+    AND profissional != '';
