@@ -70,7 +70,7 @@ def main():
             
             if lista_caixa or lista_competencia:
                 # 2. Transform (Unify & Deduplicate)
-                df_final = transform.process_data(lista_caixa, lista_competencia)
+                df_final = transform.transform_factory("0387", (lista_caixa, lista_competencia))
                 table_name = "0387_financeiro"
             else:
                 logger.warning("   Nenhum dado financeiro encontrado.")
@@ -85,7 +85,7 @@ def main():
             
             if dfs:
                 # 2. Transform (Generic Standardization)
-                df_final = transform.process_generic_data(dfs, report_id=report_id)
+                df_final = transform.transform_factory(report_id, dfs)
                 table_name = subpasta
             else:
                 logger.info("   Nenhum dado encontrado.")
