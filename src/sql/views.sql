@@ -151,3 +151,119 @@ FROM
 WHERE
     profissional IS NOT NULL
     AND profissional != '';
+
+-- ============================================================================
+-- FATO: Vendas (com IDs MD5 e flag de recorrência)
+-- ============================================================================
+CREATE
+OR REPLACE VIEW vw_fato_vendas AS
+WITH
+    vendas_ranked AS (
+        SELECT
+            data,
+            md5 (UPPER(TRIM(comanda :: TEXT))) AS id_comanda,
+            md5 (UPPER(TRIM(cliente))) AS id_cliente,
+            md5 (UPPER(TRIM(profissional))) AS id_profissional,
+            valor,
+            desconto,
+            comissao,
+            custo,
+            liquido,
+            ROW_NUMBER() OVER (
+                PARTITION BY
+                    md5 (UPPER(TRIM(cliente)))
+                ORDER BY
+                    data
+            ) AS venda_numero
+        FROM
+            tbl_0186_comandas
+    )
+SELECT
+    data,
+    id_comanda,
+    id_cliente,
+    id_profissional,
+    valor,
+    desconto,
+    comissao,
+    custo,
+    liquido,
+    (venda_numero > 1) AS is_recorrente
+FROM
+    vendas_ranked;
+
+-- ============================================================================
+-- VIEW DE NEGÓCIO: Competência (P&L Unificado)
+-- ============================================================================
+-- Convenção de Sinais:
+-- - Receitas: valores POSITIVOS
+-- - Custos, Despesas, Saídas: valores NEGATIVOS (permitindo SUM simples)
+-- ============================================================================
+CREATE
+OR REPLACE VIEW vw_competencia AS
+-- 1. Receita Bruta
+SELECT
+    f.data_movimento AS data,
+    'Receita Bruta' AS grupo_metrica,
+    c.nivel_2 AS subgrupo,
+    f.valor AS valor
+FROM
+    tbl_0387_financeiro f
+    LEFT JOIN tbl_dim_categorias c ON UPPER(TRIM(f.categoria)) = UPPER(TRIM(c.categoria))
+WHERE
+    c.nivel_1 = '1. Receita Bruta'
+UNION ALL
+-- 2. Comissões
+SELECT
+    data,
+    'Comissões' AS grupo_metrica,
+    'Comissões de Profissionais' AS subgrupo,
+    comissao * -1 AS valor
+FROM
+    vw_fato_vendas
+UNION ALL
+-- 3. Custo Serviço/Produto
+SELECT
+    f.data_movimento AS data,
+    'Custo Serviço/Produto' AS grupo_metrica,
+    c.nivel_2 AS subgrupo,
+    ABS(f.valor) * -1 AS valor
+FROM
+    tbl_0387_financeiro f
+    LEFT JOIN tbl_dim_categorias c ON UPPER(TRIM(f.categoria)) = UPPER(TRIM(c.categoria))
+WHERE
+    c.nivel_1 = '3. Custos Variáveis'
+    AND UPPER(TRIM(f.categoria)) != 'PROFISSIONAIS - COMISSÕES'
+UNION ALL
+-- 4. Despesas Operacionais
+SELECT
+    f.data_movimento AS data,
+    'Despesas Operacionais' AS grupo_metrica,
+    c.nivel_2 AS subgrupo,
+    ABS(f.valor) * -1 AS valor
+FROM
+    tbl_0387_financeiro f
+    LEFT JOIN tbl_dim_categorias c ON UPPER(TRIM(f.categoria)) = UPPER(TRIM(c.categoria))
+WHERE
+    c.nivel_1 = '4. Despesas Operacionais'
+UNION ALL
+-- 5. Despesas Financeiras
+SELECT
+    data_competencia AS data,
+    'Despesas Financeiras' AS grupo_metrica,
+    'Taxas de Cartão' AS subgrupo,
+    valor_taxa * -1 AS valor
+FROM
+    vw_fato_taxas_cartao
+UNION ALL
+-- 6. Resultado Financeiro
+SELECT
+    f.data_movimento AS data,
+    'Resultado Financeiro' AS grupo_metrica,
+    c.nivel_2 AS subgrupo,
+    f.valor AS valor
+FROM
+    tbl_0387_financeiro f
+    LEFT JOIN tbl_dim_categorias c ON UPPER(TRIM(f.categoria)) = UPPER(TRIM(c.categoria))
+WHERE
+    c.nivel_1 = '5. Resultado Financeiro';
