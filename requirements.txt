@@ -3,3 +3,6 @@ pandas
 python-dotenv
 openpyxl
 python-dateutil
+motherduck
+duckdb
+streamlit
