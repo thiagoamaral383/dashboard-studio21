@@ -6,3 +6,4 @@ python-dateutil
 motherduck
 duckdb
 streamlit
+xlsxwriter

@@ -17,7 +17,7 @@ def save_to_excel(df: pd.DataFrame, subpasta: str, filename: str):
     caminho_completo_arquivo = subpasta_path / filename
     
     try:
-        df.to_excel(caminho_completo_arquivo, index=False, header=True)
+        df.to_excel(caminho_completo_arquivo, index=False, header=True, engine='xlsxwriter')
         logger.info(f">>> SUCESSO! Salvo em: {caminho_completo_arquivo}")
     except Exception as e:
         logger.error(f"Erro ao salvar Excel localmente: {e}")
