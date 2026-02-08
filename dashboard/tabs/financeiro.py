@@ -6,6 +6,7 @@ import streamlit as st
 from utils.formatters import format_currency, calculate_previous_period
 from utils.database import query_data
 from components.kpi_cards import render_kpi_grid
+from components.charts import render_financial_evolution
 
 
 def calculate_metric(df, grupo_metrica_list):
@@ -131,6 +132,24 @@ def render():
     ]
     
     render_kpi_grid(metrics)
+    
+    st.markdown("---")
+    
+    # Financial Evolution Chart
+    st.markdown("### Evolução Financeira")
+    
+    # Query granular data for the chart
+    evolution_query = f"""
+        SELECT 
+            data,
+            valor
+        FROM rep_financeiro_competencia
+        WHERE data BETWEEN '{start_date}' AND '{end_date}'
+        ORDER BY data
+    """
+    
+    df_evolution = query_data(evolution_query)
+    render_financial_evolution(df_evolution, start_date, end_date)
     
     st.markdown("---")
     
