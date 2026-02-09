@@ -86,22 +86,40 @@ def render():
     # Calculate metrics for current period
     receita_bruta_atual = calculate_metric(df_current, 'Receita Bruta')
     comissao_atual = calculate_metric(df_current, 'Comissões')
+    taxas_atual = calculate_metric(df_current, 'Despesas Financeiras')
     despesas_atual = calculate_metric(df_current, ['Despesas Operacionais', 'Despesas Financeiras', 'Resultado Financeiro'])
     lucro_liquido_atual = df_current['valor'].sum() if not df_current.empty else 0.0
     
     # Calculate metrics for previous period (PoP)
     receita_bruta_anterior = calculate_metric(df_previous, 'Receita Bruta')
     comissao_anterior = calculate_metric(df_previous, 'Comissões')
+    taxas_anterior = calculate_metric(df_previous, 'Despesas Financeiras')
     despesas_anterior = calculate_metric(df_previous, ['Despesas Operacionais', 'Despesas Financeiras', 'Resultado Financeiro'])
     lucro_liquido_anterior = df_previous['valor'].sum() if not df_previous.empty else 0.0
     
     # Calculate metrics for YoY
     receita_bruta_yoy = calculate_metric(df_yoy, 'Receita Bruta')
     comissao_yoy = calculate_metric(df_yoy, 'Comissões')
+    taxas_yoy = calculate_metric(df_yoy, 'Despesas Financeiras')
     despesas_yoy = calculate_metric(df_yoy, ['Despesas Operacionais', 'Despesas Financeiras', 'Resultado Financeiro'])
     lucro_liquido_yoy = df_yoy['valor'].sum() if not df_yoy.empty else 0.0
     
-    # Calculate PoP deltas (percentage)
+    # Calculate Ratios (Efficiency Metrics) - Current
+    ratio_margem_atual = (lucro_liquido_atual / receita_bruta_atual * 100) if receita_bruta_atual > 0 else 0.0
+    ratio_comissao_atual = (abs(comissao_atual) / receita_bruta_atual * 100) if receita_bruta_atual > 0 else 0.0
+    ratio_taxas_atual = (abs(taxas_atual) / receita_bruta_atual * 100) if receita_bruta_atual > 0 else 0.0
+
+    # Calculate Ratios - Previous (PoP)
+    ratio_margem_anterior = (lucro_liquido_anterior / receita_bruta_anterior * 100) if receita_bruta_anterior > 0 else 0.0
+    ratio_comissao_anterior = (abs(comissao_anterior) / receita_bruta_anterior * 100) if receita_bruta_anterior > 0 else 0.0
+    ratio_taxas_anterior = (abs(taxas_anterior) / receita_bruta_anterior * 100) if receita_bruta_anterior > 0 else 0.0
+
+    # Calculate Ratios - YoY
+    ratio_margem_yoy = (lucro_liquido_yoy / receita_bruta_yoy * 100) if receita_bruta_yoy > 0 else 0.0
+    ratio_comissao_yoy = (abs(comissao_yoy) / receita_bruta_yoy * 100) if receita_bruta_yoy > 0 else 0.0
+    ratio_taxas_yoy = (abs(taxas_yoy) / receita_bruta_yoy * 100) if receita_bruta_yoy > 0 else 0.0
+
+    # Calculate Main KPI Deltas (Percentage Change)
     pct_receita_pop = ((receita_bruta_atual - receita_bruta_anterior) / receita_bruta_anterior * 100) if receita_bruta_anterior != 0 else 0
     pct_comissao_pop = ((comissao_atual - comissao_anterior) / abs(comissao_anterior) * 100) if comissao_anterior != 0 else 0
     pct_despesas_pop = ((despesas_atual - despesas_anterior) / abs(despesas_anterior) * 100) if despesas_anterior != 0 else 0
@@ -113,13 +131,29 @@ def render():
     pct_despesas_yoy = ((despesas_atual - despesas_yoy) / abs(despesas_yoy) * 100) if despesas_yoy != 0 else None
     pct_lucro_yoy = ((lucro_liquido_atual - lucro_liquido_yoy) / abs(lucro_liquido_yoy) * 100) if lucro_liquido_yoy != 0 else None
     
-    # Helper to format composite delta string
+    # Calculate Efficiency Deltas (Percentage Points - p.p.)
+    delta_margem_pop = ratio_margem_atual - ratio_margem_anterior
+    delta_margem_yoy = ratio_margem_atual - ratio_margem_yoy
+    
+    delta_comissao_pop = ratio_comissao_atual - ratio_comissao_anterior
+    delta_comissao_yoy = ratio_comissao_atual - ratio_comissao_yoy
+    
+    delta_taxas_pop = ratio_taxas_atual - ratio_taxas_anterior
+    delta_taxas_yoy = ratio_taxas_atual - ratio_taxas_yoy
+
+    # Helper to format composite delta string for Main KPIs (Percentage)
     def format_delta_str(pct_pop, pct_yoy):
         pop_str = f"{pct_pop:+.1f}%".replace('.', ',')
         if pct_yoy is None:
             return f"{pop_str} (PoP)"
         yoy_str = f"{pct_yoy:+.1f}%".replace('.', ',')
         return f"{yoy_str} (YoY) | {pop_str} (PoP)"
+
+    # Helper to format composite delta string for Efficiency KPIs (p.p.)
+    def format_delta_pp_str(pp_pop, pp_yoy):
+        pop_str = f"{pp_pop:+.1f}".replace('.', ',')
+        yoy_str = f"{pp_yoy:+.1f}".replace('.', ',')
+        return f"{yoy_str} p.p. (YoY) | {pop_str} p.p. (PoP)"
         
     # Helper to determine delta color (YoY drives color if available)
     def get_delta_color(pct_pop, pct_yoy, inverse=False):
@@ -133,13 +167,13 @@ def render():
         is_positive = val > 0
         
         if inverse:
-            # For costs: Positive (increase) is Bad (inverse), Negative (decrease) is Good (normal)
+            # For costs: Positive (increase) is Bad (inverse/red), Negative (decrease) is Good (normal/green)
             return "inverse" if is_positive else "normal"
         else:
-            # For revenue/profit: Positive (increase) is Good (normal), Negative (decrease) is Bad (inverse)
+            # For revenue/profit: Positive (increase) is Good (normal/green), Negative (decrease) is Bad (inverse/red)
             return "normal" if is_positive else "inverse"
 
-    # Build metrics array
+    # Build Main KPIs array
     metrics = [
         {
             "title": "Receita Bruta",
@@ -172,6 +206,38 @@ def render():
     ]
     
     render_kpi_grid(metrics)
+
+    st.markdown("#### Eficiência Operacional")
+    
+    # Efficiency KPIs Row
+    cols_eff = st.columns(3)
+    
+    with cols_eff[0]:
+        st.metric(
+            label="Margem Líquida",
+            value=f"{ratio_margem_atual:.1f}%".replace('.', ','),
+            delta=format_delta_pp_str(delta_margem_pop, delta_margem_yoy),
+            delta_color=get_delta_color(delta_margem_pop, delta_margem_yoy, inverse=False),
+            help="Quanto sobra de lucro para cada R$ 100 vendidos. \n\nCálculo: (Lucro Líquido / Receita Bruta) * 100"
+        )
+        
+    with cols_eff[1]:
+        st.metric(
+            label="Custo Comissão (%)",
+            value=f"{ratio_comissao_atual:.1f}%".replace('.', ','),
+            delta=format_delta_pp_str(delta_comissao_pop, delta_comissao_yoy),
+            delta_color=get_delta_color(delta_comissao_pop, delta_comissao_yoy, inverse=True),
+            help="Impacto das comissões sobre o faturamento total. \n\nCálculo: (Total Comissões / Receita Bruta) * 100"
+        )
+        
+    with cols_eff[2]:
+        st.metric(
+            label="Impacto Taxas (%)",
+            value=f"{ratio_taxas_atual:.1f}%".replace('.', ','),
+            delta=format_delta_pp_str(delta_taxas_pop, delta_taxas_yoy),
+            delta_color=get_delta_color(delta_taxas_pop, delta_taxas_yoy, inverse=True),
+            help="Peso das taxas de cartão sobre o faturamento. \n\nCálculo: (Total Taxas / Receita Bruta) * 100"
+        )
     
     st.markdown("---")
     
