@@ -3,7 +3,7 @@ Financeiro Tab - Financial KPIs and Analysis
 """
 
 import streamlit as st
-from utils.formatters import format_currency, calculate_previous_period
+from utils.formatters import format_currency, calculate_previous_period, calculate_same_period_last_year
 from utils.database import query_data
 from components.kpi_cards import render_kpi_grid
 from components.charts import render_financial_evolution
@@ -42,8 +42,11 @@ def render():
     start_date = st.session_state.start_date
     end_date = st.session_state.end_date
     
-    # Calculate previous period
+    # Calculate previous period (PoP)
     prev_start, prev_end = calculate_previous_period(start_date, end_date)
+    
+    # Calculate same period last year (YoY)
+    yoy_start, yoy_end = calculate_same_period_last_year(start_date, end_date)
     
     # Query current period data
     current_query = f"""
@@ -65,9 +68,20 @@ def render():
         GROUP BY grupo_metrica
     """
     
+    # Query YoY data
+    yoy_query = f"""
+        SELECT 
+            grupo_metrica,
+            SUM(valor) as valor
+        FROM rep_financeiro_competencia
+        WHERE data BETWEEN '{yoy_start}' AND '{yoy_end}'
+        GROUP BY grupo_metrica
+    """
+    
     # Execute queries
     df_current = query_data(current_query)
     df_previous = query_data(previous_query)
+    df_yoy = query_data(yoy_query)
     
     # Calculate metrics for current period
     receita_bruta_atual = calculate_metric(df_current, 'Receita Bruta')
@@ -75,58 +89,84 @@ def render():
     despesas_atual = calculate_metric(df_current, ['Despesas Operacionais', 'Despesas Financeiras', 'Resultado Financeiro'])
     lucro_liquido_atual = df_current['valor'].sum() if not df_current.empty else 0.0
     
-    # Calculate metrics for previous period
+    # Calculate metrics for previous period (PoP)
     receita_bruta_anterior = calculate_metric(df_previous, 'Receita Bruta')
     comissao_anterior = calculate_metric(df_previous, 'Comissões')
     despesas_anterior = calculate_metric(df_previous, ['Despesas Operacionais', 'Despesas Financeiras', 'Resultado Financeiro'])
     lucro_liquido_anterior = df_previous['valor'].sum() if not df_previous.empty else 0.0
     
-    # Calculate deltas (absolute difference)
-    delta_receita = receita_bruta_atual - receita_bruta_anterior
-    delta_comissao = comissao_atual - comissao_anterior
-    delta_despesas = despesas_atual - despesas_anterior
-    delta_lucro = lucro_liquido_atual - lucro_liquido_anterior
+    # Calculate metrics for YoY
+    receita_bruta_yoy = calculate_metric(df_yoy, 'Receita Bruta')
+    comissao_yoy = calculate_metric(df_yoy, 'Comissões')
+    despesas_yoy = calculate_metric(df_yoy, ['Despesas Operacionais', 'Despesas Financeiras', 'Resultado Financeiro'])
+    lucro_liquido_yoy = df_yoy['valor'].sum() if not df_yoy.empty else 0.0
     
-    # Calculate percentage deltas for display
-    pct_receita = (delta_receita / receita_bruta_anterior * 100) if receita_bruta_anterior != 0 else 0
-    pct_comissao = (delta_comissao / abs(comissao_anterior) * 100) if comissao_anterior != 0 else 0
-    pct_despesas = (delta_despesas / abs(despesas_anterior) * 100) if despesas_anterior != 0 else 0
-    pct_lucro = (delta_lucro / lucro_liquido_anterior * 100) if lucro_liquido_anterior != 0 else 0
+    # Calculate PoP deltas (percentage)
+    pct_receita_pop = ((receita_bruta_atual - receita_bruta_anterior) / receita_bruta_anterior * 100) if receita_bruta_anterior != 0 else 0
+    pct_comissao_pop = ((comissao_atual - comissao_anterior) / abs(comissao_anterior) * 100) if comissao_anterior != 0 else 0
+    pct_despesas_pop = ((despesas_atual - despesas_anterior) / abs(despesas_anterior) * 100) if despesas_anterior != 0 else 0
+    pct_lucro_pop = ((lucro_liquido_atual - lucro_liquido_anterior) / abs(lucro_liquido_anterior) * 100) if lucro_liquido_anterior != 0 else 0
     
-    # Format delta strings with percentage
-    delta_receita_str = f"{'+' if delta_receita > 0 else ''}{pct_receita:.1f}%".replace('.', ',')
-    delta_comissao_str = f"{'+' if delta_comissao > 0 else ''}{pct_comissao:.1f}%".replace('.', ',')
-    delta_despesas_str = f"{'+' if delta_despesas > 0 else ''}{pct_despesas:.1f}%".replace('.', ',')
-    delta_lucro_str = f"{'+' if delta_lucro > 0 else ''}{pct_lucro:.1f}%".replace('.', ',')
+    # Calculate YoY deltas (percentage) - Handle division by zero/missing data
+    pct_receita_yoy = ((receita_bruta_atual - receita_bruta_yoy) / receita_bruta_yoy * 100) if receita_bruta_yoy != 0 else None
+    pct_comissao_yoy = ((comissao_atual - comissao_yoy) / abs(comissao_yoy) * 100) if comissao_yoy != 0 else None
+    pct_despesas_yoy = ((despesas_atual - despesas_yoy) / abs(despesas_yoy) * 100) if despesas_yoy != 0 else None
+    pct_lucro_yoy = ((lucro_liquido_atual - lucro_liquido_yoy) / abs(lucro_liquido_yoy) * 100) if lucro_liquido_yoy != 0 else None
     
+    # Helper to format composite delta string
+    def format_delta_str(pct_pop, pct_yoy):
+        pop_str = f"{pct_pop:+.1f}%".replace('.', ',')
+        if pct_yoy is None:
+            return f"{pop_str} (Mês)"
+        yoy_str = f"{pct_yoy:+.1f}%".replace('.', ',')
+        return f"{yoy_str} (Ano) | {pop_str} (Mês)"
+        
+    # Helper to determine delta color (YoY drives color if available)
+    def get_delta_color(pct_pop, pct_yoy, inverse=False):
+        # Use YoY if available, otherwise PoP
+        val = pct_yoy if pct_yoy is not None else pct_pop
+        
+        if val == 0:
+            return "off"
+            
+        # Determine strict color based on direction
+        is_positive = val > 0
+        
+        if inverse:
+            # For costs: Positive (increase) is Bad (inverse), Negative (decrease) is Good (normal)
+            return "inverse" if is_positive else "normal"
+        else:
+            # For revenue/profit: Positive (increase) is Good (normal), Negative (decrease) is Bad (inverse)
+            return "normal" if is_positive else "inverse"
+
     # Build metrics array
     metrics = [
         {
             "title": "Receita Bruta",
             "value": format_currency(receita_bruta_atual),
-            "delta": delta_receita_str if receita_bruta_anterior != 0 else "N/A",
-            "delta_color": "normal",  # Higher revenue is good
+            "delta": format_delta_str(pct_receita_pop, pct_receita_yoy),
+            "delta_color": get_delta_color(pct_receita_pop, pct_receita_yoy, inverse=False),
             "help_text": "Total de receitas no período selecionado"
         },
         {
             "title": "Custo de Comissão",
-            "value": format_currency(abs(comissao_atual)),  # Show as positive for display
-            "delta": delta_comissao_str if comissao_anterior != 0 else "N/A",
-            "delta_color": "inverse",  # Higher cost is bad
+            "value": format_currency(abs(comissao_atual)),
+            "delta": format_delta_str(pct_comissao_pop, pct_comissao_yoy),
+            "delta_color": get_delta_color(pct_comissao_pop, pct_comissao_yoy, inverse=True),
             "help_text": "Total de comissões pagas aos profissionais"
         },
         {
             "title": "Despesas",
-            "value": format_currency(abs(despesas_atual)),  # Show as positive for display
-            "delta": delta_despesas_str if despesas_anterior != 0 else "N/A",
-            "delta_color": "inverse",  # Higher expenses is bad
+            "value": format_currency(abs(despesas_atual)),
+            "delta": format_delta_str(pct_despesas_pop, pct_despesas_yoy),
+            "delta_color": get_delta_color(pct_despesas_pop, pct_despesas_yoy, inverse=True),
             "help_text": "Despesas operacionais e financeiras"
         },
         {
             "title": "Lucro Líquido",
             "value": format_currency(lucro_liquido_atual),
-            "delta": delta_lucro_str if lucro_liquido_anterior != 0 else "N/A",
-            "delta_color": "normal",  # Higher profit is good
+            "delta": format_delta_str(pct_lucro_pop, pct_lucro_yoy),
+            "delta_color": get_delta_color(pct_lucro_pop, pct_lucro_yoy, inverse=False),
             "help_text": "Resultado líquido após todos os custos e despesas"
         }
     ]
@@ -161,10 +201,10 @@ def render():
             st.caption(f"{start_date.strftime('%d/%m/%Y')} até {end_date.strftime('%d/%m/%Y')}")
             st.caption(f"{(end_date - start_date).days + 1} dias")
         with col2:
-            st.caption("**Período Anterior:**")
+            st.caption("**Período Anterior (PoP):**")
             st.caption(f"{prev_start.strftime('%d/%m/%Y')} até {prev_end.strftime('%d/%m/%Y')}")
-            st.caption(f"{(prev_end - prev_start).days + 1} dias")
-    
-    # Placeholder for future charts
-    st.info("Gráficos e análises detalhadas serão implementados na próxima fase")
+            
+        with st.expander("Detalhes YoY"):
+            st.caption("**Mesmo Período Ano Anterior (YoY):**")
+            st.caption(f"{yoy_start.strftime('%d/%m/%Y')} até {yoy_end.strftime('%d/%m/%Y')}")
 

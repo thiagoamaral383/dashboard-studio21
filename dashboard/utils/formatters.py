@@ -13,7 +13,7 @@ from datetime import date, timedelta
 
 def calculate_previous_period(start_date: date, end_date: date) -> Tuple[date, date]:
     """
-    Calculate the previous period with the same duration.
+    Calculate the previous period with the same duration (PoP).
     
     For example, if the current period is 30 days (Jan 1 - Jan 30),
     the previous period will be the 30 days immediately before (Dec 2 - Dec 31).
@@ -35,6 +35,25 @@ def calculate_previous_period(start_date: date, end_date: date) -> Tuple[date, d
     previous_start = previous_end - timedelta(days=duration_days)
     
     return (previous_start, previous_end)
+
+
+def calculate_same_period_last_year(start_date: date, end_date: date) -> Tuple[date, date]:
+    """
+    Calculate the same period in the previous year (YoY).
+    Uses 365 days for fiscal alignment as per business rules.
+    
+    Args:
+        start_date: Start date of the current period
+        end_date: End date of the current period
+        
+    Returns:
+        Tuple of (yoy_start_date, yoy_end_date)
+    """
+    # Simply subtract 365 days from both start and end dates
+    yoy_start = start_date - timedelta(days=365)
+    yoy_end = end_date - timedelta(days=365)
+    
+    return (yoy_start, yoy_end)
 
 
 # ============================================================================
