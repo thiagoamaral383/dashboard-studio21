@@ -126,14 +126,14 @@ def render_financial_evolution(df, start_date, end_date):
         y=alt.Y('Valor', title="Valor (R$)"),
         color=alt.Color('Tipo', 
                         scale=alt.Scale(domain=domain, range=range_),
-                        legend=alt.Legend(title="Indicador", orient="top")),
+                        legend=alt.Legend(title="", orient="top")),
         tooltip=[
             alt.Tooltip('Data_Formatada', title='Período'),
             alt.Tooltip('Tipo', title='Tipo'),
             alt.Tooltip('Valor_Formatado', title='Valor')
         ]
     ).properties(
-        title="Evolução Financeira",
+        title="",
         height=400
     )
     

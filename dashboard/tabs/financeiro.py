@@ -117,9 +117,9 @@ def render():
     def format_delta_str(pct_pop, pct_yoy):
         pop_str = f"{pct_pop:+.1f}%".replace('.', ',')
         if pct_yoy is None:
-            return f"{pop_str} (Mês)"
+            return f"{pop_str} (PoP)"
         yoy_str = f"{pct_yoy:+.1f}%".replace('.', ',')
-        return f"{yoy_str} (Ano) | {pop_str} (Mês)"
+        return f"{yoy_str} (YoY) | {pop_str} (PoP)"
         
     # Helper to determine delta color (YoY drives color if available)
     def get_delta_color(pct_pop, pct_yoy, inverse=False):
@@ -190,21 +190,3 @@ def render():
     
     df_evolution = query_data(evolution_query)
     render_financial_evolution(df_evolution, start_date, end_date)
-    
-    st.markdown("---")
-    
-    # Debug info (optional - can be removed in production)
-    with st.expander("Informações de Período"):
-        col1, col2 = st.columns(2)
-        with col1:
-            st.caption("**Período Atual:**")
-            st.caption(f"{start_date.strftime('%d/%m/%Y')} até {end_date.strftime('%d/%m/%Y')}")
-            st.caption(f"{(end_date - start_date).days + 1} dias")
-        with col2:
-            st.caption("**Período Anterior (PoP):**")
-            st.caption(f"{prev_start.strftime('%d/%m/%Y')} até {prev_end.strftime('%d/%m/%Y')}")
-            
-        with st.expander("Detalhes YoY"):
-            st.caption("**Mesmo Período Ano Anterior (YoY):**")
-            st.caption(f"{yoy_start.strftime('%d/%m/%Y')} até {yoy_end.strftime('%d/%m/%Y')}")
-

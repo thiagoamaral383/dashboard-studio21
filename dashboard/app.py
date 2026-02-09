@@ -9,6 +9,7 @@ from pathlib import Path
 
 # Import utilities and components
 from utils.database import query_data, clear_query_cache
+from utils.formatters import calculate_previous_period, calculate_same_period_last_year
 from components.kpi_cards import render_kpi_card, render_kpi_grid, render_section_header
 
 # Import tab modules
@@ -141,6 +142,16 @@ with st.sidebar:
     
     days_diff = (end_date - start_date).days + 1
     st.caption(f"**Total:** {days_diff} dias")
+    
+    # Calculate comparison periods for display
+    prev_start, prev_end = calculate_previous_period(start_date, end_date)
+    yoy_start, yoy_end = calculate_same_period_last_year(start_date, end_date)
+
+    st.caption("**Período Anterior (PoP):**")
+    st.caption(f"{prev_start.strftime('%d/%m/%Y')} até {prev_end.strftime('%d/%m/%Y')}")
+    
+    st.caption("**Mesmo Período Ano Anterior (YoY):**")
+    st.caption(f"{yoy_start.strftime('%d/%m/%Y')} até {yoy_end.strftime('%d/%m/%Y')}")
     
     # Cache control
     st.markdown("---")
