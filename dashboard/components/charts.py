@@ -212,3 +212,215 @@ def render_top_expenses(df):
     )
     
     st.altair_chart(chart, width='stretch')
+
+
+def render_professional_ranking(df):
+    """
+    Renderiza o gráfico de ranking de profissionais por faturamento.
+    
+    Args:
+        df: DataFrame contendo as colunas 'profissional' e 'valor'.
+    """
+    if df.empty:
+        st.info("Não há dados suficientes para exibir o ranking de profissionais.")
+        return
+    
+    # Processar dados
+    df_chart = df.copy()
+    
+    # Agrupar por profissional e somar valores
+    df_grouped = df_chart.groupby('profissional')['valor'].sum().reset_index()
+    
+    # Ordenar do maior para o menor
+    df_grouped = df_grouped.sort_values('valor', ascending=False)
+    
+    # Calcular % do total
+    total = df_grouped['valor'].sum()
+    df_grouped['percentual'] = (df_grouped['valor'] / total * 100) if total > 0 else 0
+    
+    # Formatar valores para tooltip
+    df_grouped['valor_fmt'] = df_grouped['valor'].apply(lambda x: format_currency(x))
+    df_grouped['percentual_fmt'] = df_grouped['percentual'].apply(lambda x: f"{x:.1f}%".replace('.', ','))
+    
+    # Renderização Visual (Altair)
+    chart = alt.Chart(df_grouped).mark_bar().encode(
+        x=alt.X('valor', title='Faturamento (R$)', axis=alt.Axis(format=",.2f")),
+        y=alt.Y('profissional', sort='-x', title='Profissional'),
+        color=alt.value('#1d4ed8'),  # Azul mais forte
+        tooltip=[
+            alt.Tooltip('profissional', title='Profissional'),
+            alt.Tooltip('valor_fmt', title='Faturamento'),
+            alt.Tooltip('percentual_fmt', title='% do Total')
+        ]
+    ).properties(
+        title="",
+        height=400,
+        width=500  # Controla largura para evitar sobreposição
+    )
+    
+    st.altair_chart(chart)
+
+
+def render_service_pareto(df):
+    """
+    Renderiza o gráfico de Top 10 Serviços por Faturamento (Pareto).
+    
+    Args:
+        df: DataFrame contendo as colunas 'servico' e 'valor'.
+    """
+    if df.empty:
+        st.info("Não há dados suficientes para exibir o ranking de serviços.")
+        return
+    
+    # Processar dados
+    df_chart = df.copy()
+    
+    # Remover serviços nulos ou vazios
+    df_chart = df_chart[df_chart['servico'].notna() & (df_chart['servico'] != '')]
+    
+    if df_chart.empty:
+        st.info("Sem serviços registrados no período.")
+        return
+    
+    # Agrupar por serviço e somar valores
+    df_grouped = df_chart.groupby('servico')['valor'].sum().reset_index()
+    
+    # Ordenar e pegar Top 10
+    df_grouped = df_grouped.sort_values('valor', ascending=False).head(10)
+    
+    # Formatar valores para tooltip
+    df_grouped['valor_fmt'] = df_grouped['valor'].apply(lambda x: format_currency(x))
+    
+    # Renderização Visual (Altair)
+    chart = alt.Chart(df_grouped).mark_bar().encode(
+        x=alt.X('servico', 
+                sort='-y', 
+                title='Serviço', 
+                axis=alt.Axis(labelAngle=-45, labelLimit=150, labelPadding=5)),
+        y=alt.Y('valor', title='Faturamento (R$)', axis=alt.Axis(format=",.2f")),
+        color=alt.value('#27AE60'),  # Verde
+        tooltip=[
+            alt.Tooltip('servico', title='Serviço'),
+            alt.Tooltip('valor_fmt', title='Faturamento')
+        ]
+    ).properties(
+        title="",
+        height=400
+    )
+    
+    st.altair_chart(chart, width='stretch')
+
+
+def render_category_mix(df):
+    """
+    Renderiza o gráfico de Mix de Categorias (Donut Chart).
+    
+    Args:
+        df: DataFrame contendo as colunas 'categoria_servico' e 'valor'.
+    """
+    if df.empty:
+        st.info("Não há dados suficientes para exibir o mix de categorias.")
+        return
+    
+    # Processar dados
+    df_chart = df.copy()
+    
+    # Remover categorias nulas ou vazias
+    df_chart = df_chart[df_chart['categoria_servico'].notna() & (df_chart['categoria_servico'] != '')]
+    
+    if df_chart.empty:
+        st.info("Sem categorias registradas no período.")
+        return
+    
+    # Agrupar por categoria e somar valores
+    df_grouped = df_chart.groupby('categoria_servico')['valor'].sum().reset_index()
+    
+    # Calcular percentuais
+    total = df_grouped['valor'].sum()
+    df_grouped['percentual'] = (df_grouped['valor'] / total * 100) if total > 0 else 0
+    
+    # Formatar valores para tooltip
+    df_grouped['valor_fmt'] = df_grouped['valor'].apply(lambda x: format_currency(x))
+    df_grouped['percentual_fmt'] = df_grouped['percentual'].apply(lambda x: f"{x:.1f}%".replace('.', ','))
+    
+    # Renderização Visual (Altair - Donut Chart)
+    chart = alt.Chart(df_grouped).mark_arc(innerRadius=80, outerRadius=140).encode(
+        theta=alt.Theta('valor', stack=True),
+        color=alt.Color('categoria_servico', 
+                       title='Categoria',
+                       scale=alt.Scale(scheme='category10'),
+                       legend=alt.Legend(orient='right')),
+        tooltip=[
+            alt.Tooltip('categoria_servico', title='Categoria'),
+            alt.Tooltip('valor_fmt', title='Faturamento'),
+            alt.Tooltip('percentual_fmt', title='% do Total')
+        ]
+    ).properties(
+        title="",
+        width=300,   # Controla largura para caber na coluna direita
+        height=300   # Controla altura para evitar corte
+    )
+    
+    st.altair_chart(chart)
+
+
+def render_dow_performance(df):
+    """
+    Renderiza o gráfico de Performance por Dia da Semana.
+    
+    Args:
+        df: DataFrame contendo as colunas 'data' e 'valor'.
+    """
+    if df.empty:
+        st.info("Não há dados suficientes para exibir performance por dia da semana.")
+        return
+    
+    # Processar dados
+    df_chart = df.copy()
+    
+    # Garantir datetime
+    if not pd.api.types.is_datetime64_any_dtype(df_chart['data']):
+        df_chart['data'] = pd.to_datetime(df_chart['data'])
+    
+    # Extrair dia da semana (0=Monday, 6=Sunday)
+    df_chart['dia_semana_num'] = df_chart['data'].dt.dayofweek
+    
+    # Mapear para nomes em português (ordem correta: seg, ter, qua, qui, sex, sáb, dom)
+    dias_semana_map = {
+        0: 'Seg',
+        1: 'Ter',
+        2: 'Qua',
+        3: 'Qui',
+        4: 'Sex',
+        5: 'Sáb',
+        6: 'Dom'
+    }
+    df_chart['dia_semana'] = df_chart['dia_semana_num'].map(dias_semana_map)
+    
+    # Agrupar por dia da semana e calcular média de faturamento
+    df_grouped = df_chart.groupby(['dia_semana_num', 'dia_semana'])['valor'].mean().reset_index()
+    
+    # Ordenar por dia da semana (segunda a domingo)
+    df_grouped = df_grouped.sort_values('dia_semana_num')
+    
+    # Formatar valores para tooltip
+    df_grouped['valor_fmt'] = df_grouped['valor'].apply(lambda x: format_currency(x))
+    
+    # Renderização Visual (Altair)
+    # Garantir ordenação correta (Segunda a Domingo)
+    chart = alt.Chart(df_grouped).mark_bar().encode(
+        x=alt.X('dia_semana', 
+                sort=['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+                title='Dia da Semana'),
+        y=alt.Y('valor', title='Média de Faturamento (R$)', axis=alt.Axis(format=",.2f")),
+        color=alt.value('#3498DB'),  # Azul
+        tooltip=[
+            alt.Tooltip('dia_semana', title='Dia'),
+            alt.Tooltip('valor_fmt', title='Faturamento Médio')
+        ]
+    ).properties(
+        title="",
+        height=350
+    )
+    
+    st.altair_chart(chart, width='stretch')

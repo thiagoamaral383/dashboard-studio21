@@ -120,10 +120,14 @@ WITH vendas_ranked AS (
     SELECT
         data,
         comanda,
-        md5 (UPPER(TRIM(comanda :: TEXT))) AS id_comanda,
+        cliente,
+        -- ID único por visita (data + comanda + cliente)
+        md5 (data::TEXT || comanda::TEXT || COALESCE(cliente, '')::TEXT) AS id_comanda,
         md5 (UPPER(TRIM(cliente))) AS id_cliente,
         md5 (UPPER(TRIM(profissional))) AS id_profissional,
         profissional,
+        servico,
+        grupo_servico,
         valor,
         desconto,
         comissao,
@@ -143,6 +147,13 @@ SELECT
     id_cliente,
     id_profissional,
     profissional,
+    servico,
+    grupo_servico,
+    -- Nova coluna com fallback para grupo_servico vazio
+    COALESCE(
+        NULLIF(TRIM(grupo_servico), ''),
+        'Outros'
+    ) AS categoria_servico,
     valor,
     desconto,
     comissao,

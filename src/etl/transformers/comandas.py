@@ -78,9 +78,9 @@ def process_comandas(df_list: List[pd.DataFrame]) -> pd.DataFrame:
         df['servico'] = df[service_col].astype(str).str.strip().str.title()
         df['servico'] = df['servico'].replace(['', 'Nan', 'None'], 'Servico Desconhecido')
 
-    # --- GRUPO SERVICO ---
-    if 'grupo' in df.columns:
-        df['grupo_servico'] = df['grupo'].astype(str).str.strip().str.title()
+    # --- GRUPO SERVICO (CATEGORIA) ---
+    if 'categoria' in df.columns:
+        df['grupo_servico'] = df['categoria'].astype(str).str.strip().str.title()
         df['grupo_servico'] = df['grupo_servico'].replace(['', 'Nan', 'None'], 'Geral')
     else:
         df['grupo_servico'] = 'Geral'

@@ -13,7 +13,7 @@ from utils.formatters import calculate_previous_period, calculate_same_period_la
 from components.kpi_cards import render_kpi_card, render_kpi_grid, render_section_header
 
 # Import tab modules
-from tabs import financeiro, rh, marketing
+from tabs import financeiro, performance, marketing
 
 
 # ============================================================================
@@ -196,7 +196,7 @@ if start_date < date(2025, 8, 17):
 
 
 # Create tabs
-tab1, tab2, tab3 = st.tabs(["Financeiro", "RH", "Marketing"])
+tab1, tab2, tab3 = st.tabs(["Financeiro", "Performance", "Marketing"])
 
 
 # ============================================================================
@@ -207,11 +207,10 @@ with tab1:
 
 
 # ============================================================================
-# TAB: RH
+# TAB: PERFORMANCE
 # ============================================================================
 with tab2:
-    rh.render()
-
+    performance.render()
 
 # ============================================================================
 # TAB: MARKETING
