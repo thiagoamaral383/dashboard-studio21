@@ -119,9 +119,11 @@ CREATE OR REPLACE VIEW fct_vendas AS
 WITH vendas_ranked AS (
     SELECT
         data,
+        comanda,
         md5 (UPPER(TRIM(comanda :: TEXT))) AS id_comanda,
         md5 (UPPER(TRIM(cliente))) AS id_cliente,
         md5 (UPPER(TRIM(profissional))) AS id_profissional,
+        profissional,
         valor,
         desconto,
         comissao,
@@ -136,9 +138,11 @@ WITH vendas_ranked AS (
 )
 SELECT
     data,
+    comanda,
     id_comanda,
     id_cliente,
     id_profissional,
+    profissional,
     valor,
     desconto,
     comissao,
@@ -154,7 +158,12 @@ FROM
 
 CREATE OR REPLACE VIEW int_financeiro_competencia AS
 SELECT
-    f.*,
+    f.data_movimento,
+    f.categoria,
+    f.titulo,
+    f.fornecedor_cliente,
+    f.observacoes,
+    f.valor,
     c.nivel_1,
     c.nivel_2,
     c.excluir_dre
@@ -187,7 +196,14 @@ SELECT
     f.data_movimento AS data,
     'Receita Bruta' AS grupo_metrica,
     f.nivel_2 AS subgrupo,
-    f.valor AS valor
+    f.valor AS valor,
+    f.categoria AS categoria_detalhada,
+    COALESCE(
+        NULLIF(TRIM(f.titulo), ''),
+        NULLIF(TRIM(f.fornecedor_cliente), ''),
+        NULLIF(TRIM(f.observacoes), ''),
+        f.categoria
+    ) AS descricao
 FROM
     int_financeiro_competencia f
 WHERE
@@ -197,12 +213,14 @@ UNION ALL
 
 -- 2. Comissões
 SELECT
-    data,
+    v.data,
     'Comissões' AS grupo_metrica,
     'Comissões de Profissionais' AS subgrupo,
-    comissao * -1 AS valor
+    v.comissao * -1 AS valor,
+    'Comissões de Profissionais' AS categoria_detalhada,
+    'Ref. Venda #' || v.comanda || ' - ' || v.profissional AS descricao
 FROM
-    fct_vendas
+    fct_vendas v
 
 UNION ALL
 
@@ -211,7 +229,14 @@ SELECT
     f.data_movimento AS data,
     'Custo Serviço/Produto' AS grupo_metrica,
     f.nivel_2 AS subgrupo,
-    ABS(f.valor) * -1 AS valor
+    ABS(f.valor) * -1 AS valor,
+    f.categoria AS categoria_detalhada,
+    COALESCE(
+        NULLIF(TRIM(f.titulo), ''),
+        NULLIF(TRIM(f.fornecedor_cliente), ''),
+        NULLIF(TRIM(f.observacoes), ''),
+        f.categoria
+    ) AS descricao
 FROM
     int_financeiro_competencia f
 WHERE
@@ -225,7 +250,14 @@ SELECT
     f.data_movimento AS data,
     'Despesas Operacionais' AS grupo_metrica,
     f.nivel_2 AS subgrupo,
-    ABS(f.valor) * -1 AS valor
+    ABS(f.valor) * -1 AS valor,
+    f.categoria AS categoria_detalhada,
+    COALESCE(
+        NULLIF(TRIM(f.titulo), ''),
+        NULLIF(TRIM(f.fornecedor_cliente), ''),
+        NULLIF(TRIM(f.observacoes), ''),
+        f.categoria
+    ) AS descricao
 FROM
     int_financeiro_competencia f
 WHERE
@@ -238,7 +270,9 @@ SELECT
     data_competencia AS data,
     'Despesas Financeiras' AS grupo_metrica,
     'Taxas de Cartão' AS subgrupo,
-    valor_taxa * -1 AS valor
+    valor_taxa * -1 AS valor,
+    'Taxas de Cartão' AS categoria_detalhada,
+    'Taxas Maquininha/Antecipação' AS descricao
 FROM
     fct_taxas_cartao
 
@@ -249,7 +283,14 @@ SELECT
     f.data_movimento AS data,
     'Resultado Financeiro' AS grupo_metrica,
     f.nivel_2 AS subgrupo,
-    f.valor AS valor
+    f.valor AS valor,
+    f.categoria AS categoria_detalhada,
+    COALESCE(
+        NULLIF(TRIM(f.titulo), ''),
+        NULLIF(TRIM(f.fornecedor_cliente), ''),
+        NULLIF(TRIM(f.observacoes), ''),
+        f.categoria
+    ) AS descricao
 FROM
     int_financeiro_competencia f
 WHERE

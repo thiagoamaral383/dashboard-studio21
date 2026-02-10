@@ -123,7 +123,7 @@ def render_financial_evolution(df, start_date, end_date):
         x=alt.X('Data_Formatada', 
                 sort=alt.SortField(field="Data_Sort"), 
                 title=f"Período ({granularidade_texto})"),
-        y=alt.Y('Valor', title="Valor (R$)"),
+        y=alt.Y('Valor', title="Valor (R$)", axis=alt.Axis(format=",.2f")),
         color=alt.Color('Tipo', 
                         scale=alt.Scale(domain=domain, range=range_),
                         legend=alt.Legend(title="", orient="top")),
@@ -137,4 +137,78 @@ def render_financial_evolution(df, start_date, end_date):
         height=400
     )
     
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width='stretch')
+
+
+def render_top_expenses(df):
+    """
+    Renderiza o gráfico de Top 10 Despesas por Categoria.
+    
+    Args:
+        df: DataFrame detalhado contendo 'categoria', 'valor' e 'grupo_metrica'.
+    """
+    if df.empty:
+        st.info("Sem dados para exibir Top Despesas.")
+        return
+
+    # 1. Filtragem e Processamento
+    # Filtrar apenas saídas (valor < 0)
+    # Excluir Comissões e Taxas (focar em Despesas Operacionais)
+    # Assumindo que 'Comissões' e 'Taxas' podem ser identificadas pelo grupo_metrica ou nome da categoria
+    # O usuário sugeriu: df[(df['valor'] < 0) & (~df['categoria'].str.contains('COMISSÕES', case=False))]
+    
+    # Criar cópia para não alterar o original
+    df_chart = df.copy()
+    
+    # Filtrar despesas
+    df_chart = df_chart[df_chart['valor'] < 0]
+    
+    if df_chart.empty:
+        st.info("Sem despesas registradas no período.")
+        return
+
+    # Excluir Comissões e Taxas se possível
+    # Vamos tentar filtrar por grupo_metrica se disponível, ou por string na categoria
+    if 'grupo_metrica' in df_chart.columns:
+        # Manter apenas Despesas Operacionais se possível, ou excluir os outros
+        # Grupos comuns: 'Receita Bruta', 'Comissões', 'Despesas Financeiras', 'Despesas Operacionais', 'Impostos'
+        # Vamos excluir Comissões e Despesas Financeiras para focar no operacional
+        grupos_excluir = ['Comissões', 'Despesas Financeiras', 'Impostos', 'Custos Variáveis']
+        df_chart = df_chart[~df_chart['grupo_metrica'].isin(grupos_excluir)]
+    else:
+        # Fallback por string na categoria
+        termos_excluir = ['COMISSÃO', 'COMISSAO', 'TAXA', 'IMPOSTO']
+        pattern = '|'.join(termos_excluir)
+        df_chart = df_chart[~df_chart['categoria'].str.upper().str.contains(pattern, na=False)]
+        
+    if df_chart.empty:
+        st.info("Sem despesas operacionais para exibir.")
+        return
+
+    # Converter para positivo para o gráfico
+    df_chart['valor_abs'] = df_chart['valor'].abs()
+    
+    # Agrupar por categoria
+    df_grouped = df_chart.groupby('categoria')['valor_abs'].sum().reset_index()
+    
+    # Ordenar e pegar Top 10
+    df_grouped = df_grouped.sort_values('valor_abs', ascending=False).head(10)
+    
+    # Format currency for tooltip
+    df_grouped['valor_fmt'] = df_grouped['valor_abs'].apply(lambda x: format_currency(x))
+    
+    # 2. Renderização Visual (Altair)
+    chart = alt.Chart(df_grouped).mark_bar().encode(
+        x=alt.X('valor_abs', title='Valor (R$)', axis=alt.Axis(format=",.2f")),
+        y=alt.Y('categoria', sort='-x', title='Categoria'),
+        color=alt.value('#E74C3C'), # Vermelho Coral fixo para despesas
+        tooltip=[
+            alt.Tooltip('categoria', title='Categoria'),
+            alt.Tooltip('valor_fmt', title='Valor')
+        ]
+    ).properties(
+        title="Top 10 Despesas Operacionais",
+        height=400
+    )
+    
+    st.altair_chart(chart, width='stretch')

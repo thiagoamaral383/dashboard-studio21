@@ -3,10 +3,12 @@ Financeiro Tab - Financial KPIs and Analysis
 """
 
 import streamlit as st
+import pandas as pd
+from datetime import date
 from utils.formatters import format_currency, calculate_previous_period, calculate_same_period_last_year
 from utils.database import query_data
 from components.kpi_cards import render_kpi_grid
-from components.charts import render_financial_evolution
+from components.charts import render_financial_evolution, render_top_expenses
 
 
 def calculate_metric(df, grupo_metrica_list):
@@ -48,17 +50,20 @@ def render():
     # Calculate same period last year (YoY)
     yoy_start, yoy_end = calculate_same_period_last_year(start_date, end_date)
     
-    # Query current period data
+    # Query current period data (Detailed for Audit and Charts)
     current_query = f"""
         SELECT 
+            data,
             grupo_metrica,
-            SUM(valor) as valor
+            categoria_detalhada as categoria,
+            descricao,
+            valor
         FROM rep_financeiro_competencia
         WHERE data BETWEEN '{start_date}' AND '{end_date}'
-        GROUP BY grupo_metrica
+        ORDER BY data DESC
     """
     
-    # Query previous period data
+    # Query previous period data (Aggregated for KPIs)
     previous_query = f"""
         SELECT 
             grupo_metrica,
@@ -68,7 +73,7 @@ def render():
         GROUP BY grupo_metrica
     """
     
-    # Query YoY data
+    # Query YoY data (Aggregated for KPIs)
     yoy_query = f"""
         SELECT 
             grupo_metrica,
@@ -84,6 +89,7 @@ def render():
     df_yoy = query_data(yoy_query)
     
     # Calculate metrics for current period
+    # Note: df_current is detailed, so calculate_metric works fine (it sums 'valor')
     receita_bruta_atual = calculate_metric(df_current, 'Receita Bruta')
     comissao_atual = calculate_metric(df_current, 'Comissões')
     taxas_atual = calculate_metric(df_current, 'Despesas Financeiras')
@@ -145,15 +151,15 @@ def render():
     def format_delta_str(pct_pop, pct_yoy):
         pop_str = f"{pct_pop:+.1f}%".replace('.', ',')
         if pct_yoy is None:
-            return f"{pop_str} (PoP)"
+            return f"{pop_str} (Mês)"
         yoy_str = f"{pct_yoy:+.1f}%".replace('.', ',')
-        return f"{yoy_str} (YoY) | {pop_str} (PoP)"
+        return f"{yoy_str} (Ano) | {pop_str} (Mês)"
 
     # Helper to format composite delta string for Efficiency KPIs (p.p.)
     def format_delta_pp_str(pp_pop, pp_yoy):
         pop_str = f"{pp_pop:+.1f}".replace('.', ',')
         yoy_str = f"{pp_yoy:+.1f}".replace('.', ',')
-        return f"{yoy_str} p.p. (YoY) | {pop_str} p.p. (PoP)"
+        return f"{yoy_str} p.p. (Ano) | {pop_str} p.p. (Mês)"
         
     # Helper to determine delta color (YoY drives color if available)
     def get_delta_color(pct_pop, pct_yoy, inverse=False):
@@ -241,18 +247,72 @@ def render():
     
     st.markdown("---")
     
-    # Financial Evolution Chart
-    st.markdown("### Evolução Financeira")
+    # Charts Section (Layout: 2/3 Evolution, 1/3 Top Expenses)
+    col_charts = st.columns([2, 1])
     
-    # Query granular data for the chart
-    evolution_query = f"""
-        SELECT 
-            data,
-            valor
-        FROM rep_financeiro_competencia
-        WHERE data BETWEEN '{start_date}' AND '{end_date}'
-        ORDER BY data
-    """
-    
-    df_evolution = query_data(evolution_query)
-    render_financial_evolution(df_evolution, start_date, end_date)
+    with col_charts[0]:
+        st.markdown("### Evolução Financeira")
+        if not df_current.empty:
+            render_financial_evolution(df_current, start_date, end_date)
+        else:
+            st.info("Sem dados no período.")
+            
+    with col_charts[1]:
+        st.markdown("### Top Despesas")
+        if not df_current.empty:
+            render_top_expenses(df_current)
+        else:
+            st.info("Sem dados no período.")
+
+    # Analytical Table Section
+    st.markdown("")
+    with st.expander("Detalhamento de Lançamentos", expanded=False):
+        if not df_current.empty:
+            # Data Quality & Formatting
+            
+            # Sort by Date (Descending)
+            df_current = df_current.sort_values(by="data", ascending=False)
+            
+            # Fill NaNs in text columns and force string conversion for title case
+            if 'categoria' in df_current.columns:
+                df_current['categoria'] = df_current['categoria'].astype(str).str.title()
+            if 'descricao' in df_current.columns:
+                df_current['descricao'] = df_current['descricao'].astype(str).str.title()
+            if 'grupo_metrica' in df_current.columns:
+                df_current['grupo_metrica'] = df_current['grupo_metrica'].fillna("-")
+
+            # Create formatted value column for display
+            if 'valor' in df_current.columns:
+                df_current['valor_formatado'] = df_current['valor'].apply(lambda x: format_currency(x))
+
+            # Select and rename columns for display
+            # We use a copy to avoid SettingWithCopy warnings on slice
+            display_cols = ['data', 'grupo_metrica', 'categoria', 'descricao', 'valor_formatado']
+            
+            # Filter only existing columns
+            display_cols = [c for c in display_cols if c in df_current.columns]
+            
+            df_display = df_current[display_cols].copy()
+
+            st.dataframe(
+                df_display,
+                width="stretch",
+                column_config={
+                    "data": st.column_config.DateColumn(
+                        "Data",
+                        format="DD/MM/YYYY"
+                    ),
+                    "valor_formatado": st.column_config.TextColumn(
+                        "Valor (R$)"
+                    ),
+                    "grupo_metrica": st.column_config.TextColumn("Grupo"),
+                    "categoria": st.column_config.TextColumn("Categoria"),
+                    "descricao": st.column_config.TextColumn(
+                        "Descrição",
+                        width="large"
+                    )
+                },
+                hide_index=True
+            )
+        else:
+            st.info("Nenhum lançamento encontrado para os filtros selecionados.")

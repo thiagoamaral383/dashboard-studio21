@@ -49,7 +49,7 @@ with st.sidebar:
     logo_path = Path(__file__).parent.parent / "assets" / "Logo Studio21 Rosé sem fundo.png"
     
     if logo_path.exists():
-        st.image(str(logo_path), width=200)
+        st.image(str(logo_path), width=300)
     else:
         st.title("Studio21")
     
@@ -95,7 +95,7 @@ with st.sidebar:
     with col_btn1:
         st.button(
             "30 dias", 
-            use_container_width=True,
+            width='stretch',
             on_click=update_date_range,
             kwargs={"days": 30}
         )
@@ -103,7 +103,7 @@ with st.sidebar:
     with col_btn2:
         st.button(
             "3 meses", 
-            use_container_width=True,
+            width='stretch',
             on_click=update_date_range,
             kwargs={"days": 90}
         )
@@ -114,7 +114,7 @@ with st.sidebar:
     with col_btn3:
         st.button(
             "6 meses", 
-            use_container_width=True,
+            width='stretch',
             on_click=update_date_range,
             kwargs={"days": 180}
         )
@@ -122,18 +122,29 @@ with st.sidebar:
     with col_btn4:
         st.button(
             "1 ano", 
-            use_container_width=True,
+            width='stretch',
             on_click=update_date_range,
             kwargs={"days": 365}
         )
     
-    # Third row: Desde o início (full width for emphasis)
-    st.button(
-        "Desde o início", 
-        use_container_width=True,
-        on_click=update_date_range,
-        kwargs={"start": date(2023, 8, 1)}
-    )
+    # Third row: Desde o início and Nova Gestão
+    col_btn5, col_btn6 = st.columns(2)
+    
+    with col_btn5:
+        st.button(
+            "Desde o início", 
+            width='stretch',
+            on_click=update_date_range,
+            kwargs={"start": date(2023, 8, 1)}
+        )
+        
+    with col_btn6:
+        st.button(
+            "Nova Gestão", 
+            width='stretch',
+            on_click=update_date_range,
+            kwargs={"start": date(2025, 8, 17)}
+        )
     
     # Filter summary
     st.markdown("---")
@@ -147,15 +158,15 @@ with st.sidebar:
     prev_start, prev_end = calculate_previous_period(start_date, end_date)
     yoy_start, yoy_end = calculate_same_period_last_year(start_date, end_date)
 
-    st.caption("**Período Anterior (PoP):**")
+    st.caption("**Período Anterior (Mês):**")
     st.caption(f"{prev_start.strftime('%d/%m/%Y')} até {prev_end.strftime('%d/%m/%Y')}")
     
-    st.caption("**Mesmo Período Ano Anterior (YoY):**")
+    st.caption("**Mesmo Período Ano Anterior (Ano):**")
     st.caption(f"{yoy_start.strftime('%d/%m/%Y')} até {yoy_end.strftime('%d/%m/%Y')}")
     
     # Cache control
     st.markdown("---")
-    if st.button("Atualizar Dados", use_container_width=True):
+    if st.button("Atualizar Dados", width='stretch'):
         clear_query_cache()
         st.rerun()
 
@@ -167,8 +178,26 @@ with st.sidebar:
 st.title("Dashboard Studio21")
 st.caption("Análise integrada de indicadores de performance")
 
+# Warning for old management period
+if start_date < date(2025, 8, 17):
+    st.warning(
+        """
+        **Atenção: Período Misto/Gestão Anterior (Antes de 17/08/2025)**
+            
+        Você está visualizando dados históricos. Considere as seguintes ressalvas:
+        * **Receita e Comissões:** Dados confiáveis (baseados no histórico de vendas importado).
+        * **Despesas e Lucro:** Estão **subestimados**. Os custos fixos da gestão anterior (Aluguel, Luz, etc.) não foram lançados no sistema.
+        * **Impacto Estimado:** Considere um custo adicional de aprox. **R$ 6.000,00/mês** para o período anterior a Ago/25.
+            
+        *Consequência: Lucro Líquido e Margem Líquida estão incorretos.*
+        """,
+        icon="⚠️"
+    )
+
+
 # Create tabs
 tab1, tab2, tab3 = st.tabs(["Financeiro", "RH", "Marketing"])
+
 
 # ============================================================================
 # TAB: FINANCEIRO
