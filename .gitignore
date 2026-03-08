@@ -15,3 +15,5 @@ Thumbs.db
 *.xlsx
 *.csv
 *.pbix
+*.parquet
+data/

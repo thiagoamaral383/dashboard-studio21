@@ -20,6 +20,7 @@ SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
 REPORTS_CONFIG_PATH = PROJECT_ROOT / "config" / "reports.json"
 ENV_PATH = PROJECT_ROOT / "config" / ".env"
+PASTA_CACHE_PARQUET = PROJECT_ROOT / "data" / "raw"
 
 # Load Environment Variables
 load_dotenv(ENV_PATH)
@@ -133,33 +134,59 @@ def process_month(month: datetime, session: requests.Session, config_list: List[
              log_name = f"{month_str}_{report_id}{suffix}"
         
         df = None
-        logger.info(f"  [DOWNLOAD] Baixando: {log_name}...")
         
-        # Retry Mechanism
-        max_retries = 3
-        backoff = 2
-        raw_data = None
+        # 1. Parquet Cache Verification
+        hoje = datetime.now()
+        mes_limite = hoje.replace(day=1) - relativedelta(months=2) # Current month and previous two months
+        bypass_cache = month >= mes_limite
         
-        for attempt in range(max_retries):
+        subpasta_dir = PASTA_CACHE_PARQUET / subpasta
+        subpasta_dir.mkdir(parents=True, exist_ok=True)
+        cache_file = subpasta_dir / f"{log_name}.parquet"
+        
+        if cache_file.exists() and not bypass_cache:
             try:
-                raw_data = fetch_data_from_api(session, report_config, month)
-                if raw_data is not None:
-                    break # Success
+                df = pd.read_parquet(cache_file)
+                # Ensure data_competencia is set correctly even if read from cache
+                df['data_competencia'] = month
             except Exception as e:
-                logger.warning(f"  Falha tentativa {attempt+1}/{max_retries} para {log_name}: {e}")
-                if attempt < max_retries - 1:
-                    time.sleep(backoff * (attempt + 1))
-                else:
-                    logger.error(f"  Falha definitiva para {log_name} após retries.")
+                logger.error(f"  Erro ao ler cache parquet {log_name}: {e}. Tentando baixar novamente.")
         
-        if raw_data:
-            headers = report_config.get("headers", [])
-            df = pd.DataFrame(raw_data, columns=headers)
-            # Runtime Injection
-            df['data_competencia'] = month
+        # 2. Download from API if no cache
+        if df is None:
+            logger.info(f"  [DOWNLOAD] Baixando: {log_name}...")
             
-            # Respect server is handled by limited workers + natural network latency, but we can add small sleep
-            time.sleep(1)
+            # Retry Mechanism
+            max_retries = 3
+            backoff = 2
+            raw_data = None
+            
+            for attempt in range(max_retries):
+                try:
+                    raw_data = fetch_data_from_api(session, report_config, month)
+                    if raw_data is not None:
+                        break # Success
+                except Exception as e:
+                    logger.warning(f"  Falha tentativa {attempt+1}/{max_retries} para {log_name}: {e}")
+                    if attempt < max_retries - 1:
+                        time.sleep(backoff * (attempt + 1))
+                    else:
+                        logger.error(f"  Falha definitiva para {log_name} após retries.")
+            
+            if raw_data:
+                headers = report_config.get("headers", [])
+                df = pd.DataFrame(raw_data, columns=headers)
+                # Runtime Injection
+                df['data_competencia'] = month
+                
+                # Save to Parquet Cache
+                try:
+                    df.to_parquet(cache_file, index=False)
+                except Exception as e:
+                    logger.error(f"  Erro ao salvar cache parquet para {log_name}: {e}")
+                
+                # Respect server is handled by limited workers + natural network latency, but we can add small sleep
+                time.sleep(1)
         
         # 3. Aggregate
         if df is not None: # keep empty dfs possibly? Original code appended them.
