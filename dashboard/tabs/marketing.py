@@ -22,14 +22,14 @@ def render():
     
     with col2:
         st.metric(
-            "Taxa de Recorrência",
+            "Risco de Churn",
             "—",
-            help="Percentual de clientes recorrentes"
+            help="Percentual de clientes que deixam o negócio"
         )
     
     with col3:
         st.metric(
-            "Ticket Médio",
+            "Ranking de Clientes",
             "—",
-            help="Valor médio por venda"
+            help="Clientes com maior fidelidade"
         )
