@@ -127,14 +127,14 @@ def render():
 
     # Calculate Main KPI Deltas (Percentage Change)
     pct_receita_pop = ((receita_bruta_atual - receita_bruta_anterior) / receita_bruta_anterior * 100) if receita_bruta_anterior != 0 else 0
-    pct_comissao_pop = ((comissao_atual - comissao_anterior) / abs(comissao_anterior) * 100) if comissao_anterior != 0 else 0
-    pct_despesas_pop = ((despesas_atual - despesas_anterior) / abs(despesas_anterior) * 100) if despesas_anterior != 0 else 0
+    pct_comissao_pop = ((abs(comissao_atual) - abs(comissao_anterior)) / abs(comissao_anterior) * 100) if comissao_anterior != 0 else 0
+    pct_despesas_pop = ((abs(despesas_atual) - abs(despesas_anterior)) / abs(despesas_anterior) * 100) if despesas_anterior != 0 else 0
     pct_lucro_pop = ((lucro_liquido_atual - lucro_liquido_anterior) / abs(lucro_liquido_anterior) * 100) if lucro_liquido_anterior != 0 else 0
     
     # Calculate YoY deltas (percentage) - Handle division by zero/missing data
     pct_receita_yoy = ((receita_bruta_atual - receita_bruta_yoy) / receita_bruta_yoy * 100) if receita_bruta_yoy != 0 else None
-    pct_comissao_yoy = ((comissao_atual - comissao_yoy) / abs(comissao_yoy) * 100) if comissao_yoy != 0 else None
-    pct_despesas_yoy = ((despesas_atual - despesas_yoy) / abs(despesas_yoy) * 100) if despesas_yoy != 0 else None
+    pct_comissao_yoy = ((abs(comissao_atual) - abs(comissao_yoy)) / abs(comissao_yoy) * 100) if comissao_yoy != 0 else None
+    pct_despesas_yoy = ((abs(despesas_atual) - abs(despesas_yoy)) / abs(despesas_yoy) * 100) if despesas_yoy != 0 else None
     pct_lucro_yoy = ((lucro_liquido_atual - lucro_liquido_yoy) / abs(lucro_liquido_yoy) * 100) if lucro_liquido_yoy != 0 else None
     
     # Calculate Efficiency Deltas (Percentage Points - p.p.)
