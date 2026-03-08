@@ -11,7 +11,7 @@ PROJECT_ROOT = SCRIPT_DIR.parent
 sys.path.append(str(PROJECT_ROOT))
 sys.path.append(str(PROJECT_ROOT / "src"))
 
-from etl import extract, transform, load_local, load_cloud
+from etl import extract, transform, load_cloud
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -72,26 +72,10 @@ def test_transform_vectorization(caixa, competencia):
         logger.error(f"Transform failed: {e}")
         raise e
 
-def test_load_local_xlsxwriter(df):
-    logger.info(">>> TEST: Load Local (xlsxwriter)")
-    if df.empty:
-        logger.warning("Empty DF, skipping save test.")
-        return
-
-    start_time = time.time()
-    try:
-        filename = "test_benchmark_result.xlsx"
-        load_local.save_to_excel(df, "test_output", filename)
-        logger.info(f"Save Local finished in {time.time() - start_time:.2f}s")
-    except Exception as e:
-        logger.error(f"Save Local failed: {e}")
-        raise e
-
 def run_benchmarks():
     try:
         caixa, competencia = test_extract_concurrency()
         df = test_transform_vectorization(caixa, competencia)
-        test_load_local_xlsxwriter(df)
         logger.info("ALL TESTS PASSED SUCCESSFULLY.")
     except Exception as e:
         logger.critical(f"Benchmark SUITE FAILED: {e}")

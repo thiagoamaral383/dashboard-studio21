@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).parent
 sys.path.append(str(PROJECT_ROOT / "src"))
 
-from src.etl import extract, transform, load_local, load_cloud
+from src.etl import extract, transform, load_cloud
 
 # Constants
 DEFAULT_START_DATE_STR = "2023-08"

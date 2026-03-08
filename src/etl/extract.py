@@ -12,7 +12,6 @@ from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from . import utils
-from . import load_local
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +20,6 @@ SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
 REPORTS_CONFIG_PATH = PROJECT_ROOT / "config" / "reports.json"
 ENV_PATH = PROJECT_ROOT / "config" / ".env"
-PASTA_RAIZ_RELATORIOS = PROJECT_ROOT / "reports"
 
 # Load Environment Variables
 load_dotenv(ENV_PATH)
@@ -125,67 +123,43 @@ def process_month(month: datetime, session: requests.Session, config_list: List[
         suffix = report_config.get("filename_suffix", "")
         report_id = report_config.get("id")
 
-        # Filename Logic
+        # Filename equivalent for logging
         if report_id == "0007":
              datas = utils.get_period_dates(month)
              p1_str = datas['dt_p1'].strftime('%Y-%m')
              p2_str = datas['dt_p2'].strftime('%Y-%m')
-             filename = f"{p1_str} a {p2_str}_{report_id}{suffix}.xlsx"
+             log_name = f"{p1_str} a {p2_str}_{report_id}{suffix}"
         else:
-             filename = f"{month_str}_{report_id}{suffix}.xlsx"
+             log_name = f"{month_str}_{report_id}{suffix}"
         
-        file_path = PASTA_RAIZ_RELATORIOS / subpasta / filename
-        
-        # 1. Smart Cache
         df = None
-        if file_path.exists():
-            try:
-                # Keep using openpyxl for reading (default)
-                df = pd.read_excel(file_path, dtype=str)
-                # Runtime Injection from Function Argument (not file)
-                df['data_competencia'] = month
-            except Exception as e:
-                logger.error(f"  Erro ao ler cache {filename}: {e}. Tentando baixar novamente.")
+        logger.info(f"  [DOWNLOAD] Baixando: {log_name}...")
         
-        # 2. Download
-        if df is None:
-            logger.info(f"  [DOWNLOAD] Baixando: {filename}...")
+        # Retry Mechanism
+        max_retries = 3
+        backoff = 2
+        raw_data = None
+        
+        for attempt in range(max_retries):
+            try:
+                raw_data = fetch_data_from_api(session, report_config, month)
+                if raw_data is not None:
+                    break # Success
+            except Exception as e:
+                logger.warning(f"  Falha tentativa {attempt+1}/{max_retries} para {log_name}: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(backoff * (attempt + 1))
+                else:
+                    logger.error(f"  Falha definitiva para {log_name} após retries.")
+        
+        if raw_data:
+            headers = report_config.get("headers", [])
+            df = pd.DataFrame(raw_data, columns=headers)
+            # Runtime Injection
+            df['data_competencia'] = month
             
-            # Retry Mechanism
-            max_retries = 3
-            backoff = 2
-            raw_data = None
-            
-            for attempt in range(max_retries):
-                try:
-                    raw_data = fetch_data_from_api(session, report_config, month)
-                    if raw_data is not None:
-                        break # Success
-                except Exception as e:
-                    logger.warning(f"  Falha tentativa {attempt+1}/{max_retries} para {filename}: {e}")
-                    if attempt < max_retries - 1:
-                        time.sleep(backoff * (attempt + 1))
-                    else:
-                        logger.error(f"  Falha definitiva para {filename} após retries.")
-            
-            if raw_data:
-                headers = report_config.get("headers", [])
-                headers = report_config.get("headers", [])
-                df = pd.DataFrame(raw_data, columns=headers)
-                # Runtime Injection
-                df['data_competencia'] = month
-                
-                # Save Local
-                try:
-                    load_local.save_to_excel(df, subpasta, filename) 
-                except Exception as e:
-                    logger.error(f"  Erro ao salvar {filename}: {e}")
-                
-                # Respect server is handled by limited workers + natural network latency, but we can add small sleep
-                time.sleep(1)
-                
-            else:
-                pass
+            # Respect server is handled by limited workers + natural network latency, but we can add small sleep
+            time.sleep(1)
         
         # 3. Aggregate
         if df is not None: # keep empty dfs possibly? Original code appended them.
@@ -278,36 +252,4 @@ def extract_generic_report(report_config: Dict, start_date_str: str = "2023-08-0
 
     return dfs
 
-def identify_months_to_download(relatorio: Dict, hoje: datetime, target_month_dt: datetime, start_date_dt: datetime) -> List[datetime]:
-    # Legacy function for backward compatibility
-    report_id = relatorio.get("id", "UNKNOWN")
-    subpasta = relatorio.get("nome_subpasta", "")
-    report_type = relatorio.get("report_type", "padrao")
-    suffix = relatorio.get("filename_suffix", "")
-    
-    subpasta_path = PASTA_RAIZ_RELATORIOS / subpasta
-    
-    if report_type == "sem_data":
-        mes_ano_extracao = hoje.strftime('%Y-%m')
-        filename = f"{mes_ano_extracao}_{report_id}{suffix}.xlsx"
-        if (subpasta_path / filename).exists():
-            return []
-        return [hoje.replace(day=1)]
-        
-    all_months = utils.get_month_list(start_date_dt, target_month_dt)
-    months_to_download = []
-    
-    for month in all_months:
-        if report_id == "0007":
-             datas = utils.get_period_dates(month)
-             p1_str = datas['dt_p1'].strftime('%Y-%m')
-             p2_str = datas['dt_p2'].strftime('%Y-%m')
-             filename = f"{p1_str} a {p2_str}_{report_id}{suffix}.xlsx"
-        else:
-            month_str = month.strftime('%Y-%m')
-            filename = f"{month_str}_{report_id}{suffix}.xlsx"
-            
-        if not (subpasta_path / filename).exists():
-            months_to_download.append(month)
-            
-    return months_to_download
+
