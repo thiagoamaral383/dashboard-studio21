@@ -117,16 +117,6 @@ def render():
         yoy_str = f"{pct_yoy:+.1f}%".replace('.', ',')
         return f"{yoy_str} (Ano) | {mom_str} (Mês)"
 
-    # Helper for delta color
-    def get_delta_color(val_atual, val_prev, val_yoy):
-        # Business KPIs: increase is good
-        val_ref = val_yoy if val_yoy > 0 else val_prev
-        if val_atual > val_ref:
-            return "normal"
-        elif val_atual < val_ref:
-            return "inverse"
-        return "off"
-
     # =========================================================================
     # KPI CARDS (Row 1)
     # =========================================================================
@@ -138,7 +128,7 @@ def render():
             label="Fat. Médio Diário",
             value=format_currency(kpis_atual["faturamento_medio_diario"]),
             delta=format_delta_str(kpis_atual["faturamento_medio_diario"], kpis_prev["faturamento_medio_diario"], kpis_yoy["faturamento_medio_diario"]),
-            delta_color=get_delta_color(kpis_atual["faturamento_medio_diario"], kpis_prev["faturamento_medio_diario"], kpis_yoy["faturamento_medio_diario"]),
+            delta_color="normal",
             help="Faturamento médio por dia com vendas\n\nCálculo: Faturamento Total / Quantidade de Dias com Vendas"
         )
     
@@ -147,7 +137,7 @@ def render():
             label="Atendimentos",
             value=f"{kpis_atual['atendimentos']:,}".replace(',', '.'),
             delta=format_delta_str(kpis_atual["atendimentos"], kpis_prev["atendimentos"], kpis_yoy["atendimentos"]),
-            delta_color=get_delta_color(kpis_atual["atendimentos"], kpis_prev["atendimentos"], kpis_yoy["atendimentos"]),
+            delta_color="normal",
             help="Número de atendimentos únicos (comandas) no período"
         )
     
@@ -156,7 +146,7 @@ def render():
             label="Ticket Médio",
             value=format_currency(kpis_atual["ticket_medio"]),
             delta=format_delta_str(kpis_atual["ticket_medio"], kpis_prev["ticket_medio"], kpis_yoy["ticket_medio"]),
-            delta_color=get_delta_color(kpis_atual["ticket_medio"], kpis_prev["ticket_medio"], kpis_yoy["ticket_medio"]),
+            delta_color="normal",
             help="Faturamento médio por atendimento\n\nCálculo: Faturamento Total / Atendimentos"
         )
     
@@ -165,7 +155,7 @@ def render():
             label="Itens por Cesta",
             value=f"{kpis_atual['itens_por_cesta']:.1f}".replace('.', ','),
             delta=format_delta_str(kpis_atual["itens_por_cesta"], kpis_prev["itens_por_cesta"], kpis_yoy["itens_por_cesta"]),
-            delta_color=get_delta_color(kpis_atual["itens_por_cesta"], kpis_prev["itens_por_cesta"], kpis_yoy["itens_por_cesta"]),
+            delta_color="normal",
             help="Média de serviços realizados por visita. Ex: Pé + Mão conta como 1 item se for um pacote, ou 2 se lançados separados.\n\nCálculo: Total de Itens / Atendimentos"
         )
     

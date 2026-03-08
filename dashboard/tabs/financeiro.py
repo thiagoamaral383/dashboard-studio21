@@ -160,24 +160,6 @@ def render():
         pop_str = f"{pp_pop:+.1f}".replace('.', ',')
         yoy_str = f"{pp_yoy:+.1f}".replace('.', ',')
         return f"{yoy_str} p.p. (Ano) | {pop_str} p.p. (Mês)"
-        
-    # Helper to determine delta color (YoY drives color if available)
-    def get_delta_color(pct_pop, pct_yoy, inverse=False):
-        # Use YoY if available, otherwise PoP
-        val = pct_yoy if pct_yoy is not None else pct_pop
-        
-        if val == 0:
-            return "off"
-            
-        # Determine strict color based on direction
-        is_positive = val > 0
-        
-        if inverse:
-            # For costs: Positive (increase) is Bad (inverse/red), Negative (decrease) is Good (normal/green)
-            return "inverse" if is_positive else "normal"
-        else:
-            # For revenue/profit: Positive (increase) is Good (normal/green), Negative (decrease) is Bad (inverse/red)
-            return "normal" if is_positive else "inverse"
 
     # Build Main KPIs array
     metrics = [
@@ -185,28 +167,28 @@ def render():
             "title": "Receita Bruta",
             "value": format_currency(receita_bruta_atual),
             "delta": format_delta_str(pct_receita_pop, pct_receita_yoy),
-            "delta_color": get_delta_color(pct_receita_pop, pct_receita_yoy, inverse=False),
+            "delta_color": "normal",
             "help_text": "Total de receitas no período selecionado"
         },
         {
             "title": "Custo de Comissão",
             "value": format_currency(abs(comissao_atual)),
             "delta": format_delta_str(pct_comissao_pop, pct_comissao_yoy),
-            "delta_color": get_delta_color(pct_comissao_pop, pct_comissao_yoy, inverse=True),
+            "delta_color": "inverse",
             "help_text": "Total de comissões pagas aos profissionais"
         },
         {
             "title": "Despesas",
             "value": format_currency(abs(despesas_atual)),
             "delta": format_delta_str(pct_despesas_pop, pct_despesas_yoy),
-            "delta_color": get_delta_color(pct_despesas_pop, pct_despesas_yoy, inverse=True),
+            "delta_color": "inverse",
             "help_text": "Despesas operacionais e financeiras"
         },
         {
             "title": "Lucro Líquido",
             "value": format_currency(lucro_liquido_atual),
             "delta": format_delta_str(pct_lucro_pop, pct_lucro_yoy),
-            "delta_color": get_delta_color(pct_lucro_pop, pct_lucro_yoy, inverse=False),
+            "delta_color": "normal",
             "help_text": "Resultado líquido após todos os custos e despesas"
         }
     ]
@@ -223,7 +205,7 @@ def render():
             label="Margem Líquida",
             value=f"{ratio_margem_atual:.1f}%".replace('.', ','),
             delta=format_delta_pp_str(delta_margem_pop, delta_margem_yoy),
-            delta_color=get_delta_color(delta_margem_pop, delta_margem_yoy, inverse=False),
+            delta_color="normal",
             help="Quanto sobra de lucro para cada R$ 100 vendidos. \n\nCálculo: (Lucro Líquido / Receita Bruta) * 100"
         )
         
@@ -232,7 +214,7 @@ def render():
             label="Custo Comissão (%)",
             value=f"{ratio_comissao_atual:.1f}%".replace('.', ','),
             delta=format_delta_pp_str(delta_comissao_pop, delta_comissao_yoy),
-            delta_color=get_delta_color(delta_comissao_pop, delta_comissao_yoy, inverse=True),
+            delta_color="inverse",
             help="Impacto das comissões sobre o faturamento total. \n\nCálculo: (Total Comissões / Receita Bruta) * 100"
         )
         
@@ -241,7 +223,7 @@ def render():
             label="Impacto Taxas (%)",
             value=f"{ratio_taxas_atual:.1f}%".replace('.', ','),
             delta=format_delta_pp_str(delta_taxas_pop, delta_taxas_yoy),
-            delta_color=get_delta_color(delta_taxas_pop, delta_taxas_yoy, inverse=True),
+            delta_color="inverse",
             help="Peso das taxas de cartão sobre o faturamento. \n\nCálculo: (Total Taxas / Receita Bruta) * 100"
         )
     
