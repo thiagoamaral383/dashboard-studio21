@@ -22,7 +22,7 @@ from src.etl import extract, transform, load_local, load_cloud
 DEFAULT_START_DATE_STR = "2023-08"
 
 def main():
-    logger.info("--- Iniciando Pipeline de Dados Studio21 (Modernizado) ---")
+    logger.info("--- Iniciando Pipeline de Dados Studio21---")
     
     # 1. Configuração de Datas
     hoje = datetime.now()
