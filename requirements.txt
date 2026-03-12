@@ -4,7 +4,7 @@ python-dotenv
 openpyxl
 python-dateutil
 motherduck
-duckdb
+duckdb==1.4.4
 duckdb-engine
 streamlit>=1.40.0
 sqlalchemy
