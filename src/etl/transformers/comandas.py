@@ -90,7 +90,7 @@ def process_comandas(df_list: List[pd.DataFrame]) -> pd.DataFrame:
     # Dates
     if 'data' in df.columns:
         df['data'] = clean_date(df['data'])
-        df['data_dt'] = pd.to_datetime(df['data'], errors='coerce')
+        df['data_dt'] = pd.to_datetime(df['data'], dayfirst=True, errors='coerce')
     else:
         df['data_dt'] = pd.NaT
 

@@ -51,7 +51,7 @@ def render_financial_evolution(df, start_date, end_date):
     
     # Garantir datetime
     if not pd.api.types.is_datetime64_any_dtype(df_proc['data']):
-        df_proc['data'] = pd.to_datetime(df_proc['data'])
+        df_proc['data'] = pd.to_datetime(df_proc['data'], dayfirst=True)
         
     # Agrupamento (Resample)
     # Primeiro definimos o índice como data para usar resample
@@ -380,7 +380,7 @@ def render_dow_performance(df):
     
     # Garantir datetime
     if not pd.api.types.is_datetime64_any_dtype(df_chart['data']):
-        df_chart['data'] = pd.to_datetime(df_chart['data'])
+        df_chart['data'] = pd.to_datetime(df_chart['data'], dayfirst=True)
     
     # Extrair dia da semana (0=Monday, 6=Sunday)
     df_chart['dia_semana_num'] = df_chart['data'].dt.dayofweek

@@ -88,7 +88,7 @@ def process_profissionais(df_list: List[pd.DataFrame]) -> pd.DataFrame:
         
     # Data Cadastro - simple clean if exists
     if 'data_cadastro' in df.columns:
-        df['data_cadastro'] = pd.to_datetime(df['data_cadastro'], errors='coerce')
+        df['data_cadastro'] = pd.to_datetime(df['data_cadastro'], dayfirst=True, errors='coerce')
     else:
         df['data_cadastro'] = pd.NaT
 
