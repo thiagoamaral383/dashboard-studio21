@@ -163,12 +163,6 @@ with st.sidebar:
     
     st.caption("**Mesmo Período Ano Anterior (Ano):**")
     st.caption(f"{yoy_start.strftime('%d/%m/%Y')} até {yoy_end.strftime('%d/%m/%Y')}")
-    
-    # Cache control
-    st.markdown("---")
-    if st.button("Atualizar Dados", width='stretch'):
-        clear_query_cache()
-        st.rerun()
 
 
 # ============================================================================
