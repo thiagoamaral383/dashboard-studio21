@@ -17,3 +17,7 @@ Thumbs.db
 *.pbix
 *.parquet
 data/
+.venv/
+
+# IDE
+.vscode/
